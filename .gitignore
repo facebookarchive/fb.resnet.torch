@@ -1,0 +1,3 @@
+gen/
+libnccl.so
+model_best.t7
