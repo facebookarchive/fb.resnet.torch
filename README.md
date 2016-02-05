@@ -3,6 +3,8 @@ ResNet training in Torch
 
 This implements training of residual networks from [Deep Residual Learning for Image Recognition](http://arxiv.org/abs/1512.03385) by Kaiming He, et. al.
 
+[We wrote a more verbose blog post discussing this code, and ResNets in general here.](http://torch.ch/blog/2016/02/04/resnets.html)
+
 
 ## Requirements
 See the [installation instructions](INSTALL.md) for a step-by-step guide.
