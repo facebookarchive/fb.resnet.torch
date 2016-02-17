@@ -18,7 +18,7 @@ th main.lua -dataset cifar10 -nGPU 2 -batchSize 128 -depth 110
 To fit ResNet-1202 on two GPUs, you will need to use the [`-shareGradInput`](#sharegradinput) flag:
 
 ```bash
-th main.lua -dataset cifar10 -nGPU 2 -batchSize 128 -depth 1202 -shareGradInput
+th main.lua -dataset cifar10 -nGPU 2 -batchSize 128 -depth 1202 -shareGradInput true
 ```
 
 ### ImageNet
@@ -39,13 +39,13 @@ th main.lua -depth 34 -nGPU 4 -nThreads 8 -batchSize 256 -data [imagenet-folder]
 To train ResNet-50 on 4 GPUs, you will need to use the [`-shareGradInput`](#sharegradinput) flag:
 
 ```bash
-th main.lua -depth 50 -nGPU 4 -nThreads 8 -batchSize 256 -shareGradInput -data [imagenet-folder]
+th main.lua -depth 50 -nGPU 4 -nThreads 8 -batchSize 256 -shareGradInput true -data [imagenet-folder]
 ```
 
 To train ResNet-101 or ResNet-152 with batch size 256, you may need 8 GPUs:
 
 ```bash
-th main.lua -depth 152 -nGPU 8 -nThreads 12 -batchSize 256 -shareGradInput -data [imagenet-folder]
+th main.lua -depth 152 -nGPU 8 -nThreads 12 -batchSize 256 -shareGradInput true -data [imagenet-folder]
 ```
 
 ## Useful flags

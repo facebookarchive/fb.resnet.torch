@@ -11,10 +11,10 @@ require 'paths'
 require 'optim'
 require 'nn'
 local DataLoader = require 'dataloader'
-local datasets = require 'datasets/init'
 local models = require 'models/init'
 local Trainer = require 'train'
 local opts = require 'opts'
+local checkpoints = require 'checkpoints'
 
 torch.setdefaulttensortype('torch.FloatTensor')
 
@@ -22,14 +22,18 @@ local opt = opts.parse(arg)
 torch.manualSeed(opt.manualSeed)
 cutorch.manualSeedAll(opt.manualSeed)
 
--- Model and criterion
-local model, criterion = models.setup(opt)
+-- Load previous checkpoint, if it exists
+local checkpoint, optimState = checkpoints.latest(opt)
+local optimState = checkpoint and torch.load(checkpoint.optimFile) or nil
+
+-- Create model
+local model, criterion = models.setup(opt, checkpoint)
 
 -- Data loading
 local trainLoader, valLoader = DataLoader.create(opt)
 
 -- The trainer handles the training loop and evaluation on validation set
-local trainer = Trainer(model, criterion, opt)
+local trainer = Trainer(model, criterion, opt, optimState)
 
 if opt.testOnly then
    local top1Err, top5Err = trainer:test(0, valLoader)
@@ -37,23 +41,25 @@ if opt.testOnly then
    return
 end
 
-local best1Err = math.huge
-local best5Err = math.huge
-for epoch = opt.epochNumber, opt.nEpochs do
+local startEpoch = checkpoint and checkpoint.epoch + 1 or opt.epochNumber
+local bestTop1 = math.huge
+local bestTop5 = math.huge
+for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
-   trainer:train(epoch, trainLoader)
+   local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
 
    -- Run model on validation set
-   local top1Err, top5Err = trainer:test(epoch, valLoader)
+   local testTop1, testTop5 = trainer:test(epoch, valLoader)
 
-   -- Save the model if it has the best top-1 error
-   if top1Err < best1Err then
-      print(' * Saving best model ', top1Err, top5Err)
-      torch.save('model_best.t7', model)
-      best1Err = top1Err
-      best5Err = top5Err
+   local bestModel = false
+   if testTop1 < bestTop1 then
+      bestModel = true
+      bestTop1 = testTop1
+      bestTop5 = testTop5
+      print(' * Best model ', testTop1, testTop5)
    end
-   torch.save('model_' .. epoch .. '.t7', model)
+
+   checkpoints.save(epoch, model, trainer.optimState, bestModel)
 end
 
-print(string.format(' * Finished top1: %6.3f  top5: %6.3f', best1Err, best5Err))
+print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))

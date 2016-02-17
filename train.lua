@@ -14,10 +14,10 @@ local optim = require 'optim'
 local M = {}
 local Trainer = torch.class('resnet.Trainer', M)
 
-function Trainer:__init(model, criterion, opt)
+function Trainer:__init(model, criterion, opt, optimState)
    self.model = model
    self.criterion = criterion
-   self.optimState = {
+   self.optimState = optimState or {
       learningRate = opt.LR,
       learningRateDecay = 0.0,
       momentum = opt.momentum,
@@ -41,6 +41,8 @@ function Trainer:train(epoch, dataloader)
    end
 
    local trainSize = dataloader:size()
+   local top1Sum, top5Sum, lossSum = 0.0, 0.0, 0.0
+   local N = 0
 
    print('=> Training epoch # ' .. epoch)
    -- set the batch norm to training mode
@@ -61,6 +63,10 @@ function Trainer:train(epoch, dataloader)
       optim.sgd(feval, self.params, self.optimState)
 
       local top1, top5 = self:computeScore(output, sample.target, 1)
+      top1Sum = top1Sum + top1
+      top5Sum = top5Sum + top5
+      lossSum = lossSum + loss
+      N = N + 1
 
       print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
          epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
@@ -71,6 +77,8 @@ function Trainer:train(epoch, dataloader)
       timer:reset()
       dataTimer:reset()
    end
+
+   return top1Sum / N, top5Sum / N, lossSum / N
 end
 
 function Trainer:test(epoch, dataloader)
@@ -107,12 +115,10 @@ function Trainer:test(epoch, dataloader)
    end
    self.model:training()
 
-   local top1Avg = top1Sum / N
-   local top5Avg = top5Sum / N
    print((' * Finished epoch # %d     top1: %7.3f  top5: %7.3f\n'):format(
-      epoch, top1Avg, top5Avg))
+      epoch, top1Sum / N, top5Sum / N))
 
-   return top1Avg, top5Avg
+   return top1Sum / N, top5Sum / N
 end
 
 function Trainer:computeScore(output, target, nCrops)
