@@ -68,7 +68,6 @@ function M.setup(opt, checkpoint)
          'expected last layer to be fully connected')
 
       local linear = nn.Linear(orig.weight:size(2), opt.nClasses)
-      linear.weight:zero() -- only trains last layer to start
       linear.bias:zero()
 
       model:remove(#model.modules)
