@@ -16,20 +16,22 @@ function M.parse(arg)
    cmd:text('Options:')
     ------------ General options --------------------
 
-   cmd:option('-data',     '',        'Path to dataset')
-   cmd:option('-dataset', 'imagenet', 'Options: imagenet | cifar10')
-   cmd:option('-manualSeed',         2, 'Manually set RNG seed')
-   cmd:option('-nGPU',               1, 'Number of GPUs to use by default')
-   cmd:option('-backend',     'cudnn', 'Options: cudnn | cunn')
-   cmd:option('-cudnn',     'fastest', 'Options: fastest | default | deterministic')
+   cmd:option('-data',       '',         'Path to dataset')
+   cmd:option('-dataset',    'imagenet', 'Options: imagenet | cifar10')
+   cmd:option('-manualSeed', 2,          'Manually set RNG seed')
+   cmd:option('-nGPU',       1,          'Number of GPUs to use by default')
+   cmd:option('-backend',    'cudnn',    'Options: cudnn | cunn')
+   cmd:option('-cudnn',      'fastest',  'Options: fastest | default | deterministic')
+   cmd:option('-gen',        'gen',      'Path to save generated files')
    ------------- Data options ------------------------
    cmd:option('-nThreads',        2, 'number of data loading threads')
    ------------- Training options --------------------
-   cmd:option('-nEpochs',         0,    'Number of total epochs to run')
-   cmd:option('-epochNumber',     1,     'Manual epoch number (useful on restarts)')
-   cmd:option('-batchSize',       32,    'mini-batch size (1 = pure stochastic)')
-   cmd:option('-testOnly',        false, 'Run on validation set only')
-   cmd:option('-tenCrop',         false, 'Ten-crop testing')
+   cmd:option('-nEpochs',         0,       'Number of total epochs to run')
+   cmd:option('-epochNumber',     1,       'Manual epoch number (useful on restarts)')
+   cmd:option('-batchSize',       32,      'mini-batch size (1 = pure stochastic)')
+   cmd:option('-testOnly',        'false', 'Run on validation set only')
+   cmd:option('-tenCrop',         'false', 'Ten-crop testing')
+   cmd:option('-resume',          'none',  'Path to directory containing checkpoint')
    ---------- Optimization options ----------------------
    cmd:option('-LR',              0.1,   'initial learning rate')
    cmd:option('-momentum',        0.9,   'momentum')
@@ -37,16 +39,21 @@ function M.parse(arg)
    ---------- Model options ----------------------------------
    cmd:option('-netType',      'resnet', 'Options: resnet')
    cmd:option('-depth',        34,       'ResNet depth: 18 | 34 | 50 | 101 | ...', 'number')
-   cmd:option('-shortcutType', '',      'Options: A | B | C')
-   cmd:option('-retrain',      'none', 'Path to model to retrain with')
-   cmd:option('-optimState',   'none', 'Path to an optimState to reload from')
+   cmd:option('-shortcutType', '',       'Options: A | B | C')
+   cmd:option('-retrain',      'none',   'Path to model to retrain with')
+   cmd:option('-optimState',   'none',   'Path to an optimState to reload from')
    ---------- Model options ----------------------------------
-   cmd:option('-shareGradInput', false,  'Share gradInput tensors to reduce memory usage')
-   cmd:option('-resetClassifier', false, 'Reset the fully connected layer for fine-tuning')
-   cmd:option('-nClasses',       0,      'Number of classes in the dataset')
+   cmd:option('-shareGradInput',  'false', 'Share gradInput tensors to reduce memory usage')
+   cmd:option('-resetClassifier', 'false', 'Reset the fully connected layer for fine-tuning')
+   cmd:option('-nClasses',         0,      'Number of classes in the dataset')
    cmd:text()
 
    local opt = cmd:parse(arg or {})
+
+   opt.testOnly = opt.testOnly ~= 'false'
+   opt.tenCrop = opt.tenCrop ~= 'false'
+   opt.shareGradInput = opt.shareGradInput ~= 'false'
+   opt.resetClassifier = opt.resetClassifier ~= 'false'
 
    if opt.dataset == 'imagenet' then
       -- Handle the most common case of missing -data flag

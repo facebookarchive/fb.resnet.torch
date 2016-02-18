@@ -16,9 +16,14 @@ require 'cudnn'
 
 local M = {}
 
-function M.setup(opt)
+function M.setup(opt, checkpoint)
    local model
-   if opt.retrain ~= 'none' then
+   if checkpoint then
+      local modelPath = paths.concat(opt.resume, checkpoint.modelFile)
+      assert(paths.filep(modelPath), 'Saved model not found: ' .. modelPath)
+      print('=> Resuming model from ' .. modelPath)
+      model = torch.load(modelPath)
+   elseif opt.retrain ~= 'none' then
       assert(paths.filep(opt.retrain), 'File not found: ' .. opt.retrain)
       print('Loading model from file: ' .. opt.retrain)
       model = torch.load(opt.retrain)
@@ -55,7 +60,7 @@ function M.setup(opt)
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset
-   if opt.resetClassifier then
+   if opt.resetClassifier and not checkpoint then
       print(' => Replacing classifier with ' .. opt.nClasses .. '-way classifier')
 
       local orig = model:get(#model.modules)

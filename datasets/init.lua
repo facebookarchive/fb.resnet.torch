@@ -20,7 +20,7 @@ local function isvalid(opt, cachePath)
 end
 
 function M.create(opt, split)
-   local cachePath = paths.concat('gen', opt.dataset .. '.t7')
+   local cachePath = paths.concat(opt.gen, opt.dataset .. '.t7')
    if not paths.filep(cachePath) or not isvalid(opt, cachePath) then
       paths.mkdir('gen')
 
