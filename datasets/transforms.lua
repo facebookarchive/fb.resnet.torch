@@ -24,38 +24,38 @@ end
 
 function M.ColorNormalize(meanstd)
    return function(img)
-        img = img:clone()
-        for i=1,3 do
-            img[i]:add(-meanstd.mean[i])
-            img[i]:div(meanstd.std[i])
-        end
-        return img
-    end
+      img = img:clone()
+      for i=1,3 do
+         img[i]:add(-meanstd.mean[i])
+         img[i]:div(meanstd.std[i])
+      end
+      return img
+   end
 end
 
 -- Scales the smaller edge to size
 function M.Scale(size, interpolation)
-    interpolation = interpolation or 'bicubic'
-    return function(input)
-       local w, h = input:size(3), input:size(2)
-        if (w <= h and w == size) or (h <= w and h == size) then
-            return input
-        end
-        if w < h then
-            return image.scale(input, size, h/w * size, interpolation)
-        else
-            return image.scale(input, w/h * size, size, interpolation)
-        end
-    end
+   interpolation = interpolation or 'bicubic'
+   return function(input)
+      local w, h = input:size(3), input:size(2)
+      if (w <= h and w == size) or (h <= w and h == size) then
+         return input
+      end
+      if w < h then
+         return image.scale(input, size, h/w * size, interpolation)
+      else
+         return image.scale(input, w/h * size, size, interpolation)
+      end
+   end
 end
 
 -- Crop to centered rectangle
 function M.CenterCrop(size)
-    return function(input)
-        local w1 = math.ceil((input:size(3) - size)/2)
-        local h1 = math.ceil((input:size(2) - size)/2)
-        return image.crop(input, w1, h1, w1 + size, h1 + size) -- center patch
-    end
+   return function(input)
+      local w1 = math.ceil((input:size(3) - size)/2)
+      local h1 = math.ceil((input:size(2) - size)/2)
+      return image.crop(input, w1, h1, w1 + size, h1 + size) -- center patch
+   end
 end
 
 -- Random crop form larger image with optional zero padding
@@ -66,9 +66,9 @@ function M.RandomCrop(size, padding)
       if padding > 0 then
          local temp = input.new(3, input:size(2) + 2*padding, input:size(3) + 2*padding)
          temp:zero()
-             :narrow(2, padding+1, input:size(2))
-             :narrow(3, padding+1, input:size(3))
-             :copy(input)
+            :narrow(2, padding+1, input:size(2))
+            :narrow(3, padding+1, input:size(3))
+            :copy(input)
          input = temp
       end
 
@@ -111,73 +111,73 @@ end
 
 -- Resized with shorter side randomly sampled from [minSize, maxSize] (ResNet-style)
 function M.RandomScale(minSize, maxSize)
-    return function(input)
-        local w, h = input:size(3), input:size(2)
+   return function(input)
+      local w, h = input:size(3), input:size(2)
 
-        local targetSz = torch.random(minSize, maxSize)
-        local targetW, targetH = targetSz, targetSz
-        if w < h then
-            targetH = torch.round(h / w * targetW)
-        else
-            targetW = torch.round(w / h * targetH)
-        end
+      local targetSz = torch.random(minSize, maxSize)
+      local targetW, targetH = targetSz, targetSz
+      if w < h then
+         targetH = torch.round(h / w * targetW)
+      else
+         targetW = torch.round(w / h * targetH)
+      end
 
-        return image.scale(input, targetW, targetH, 'bicubic')
-    end
+      return image.scale(input, targetW, targetH, 'bicubic')
+   end
 end
 
 -- Random crop with size 8%-100% and aspect ratio 3/4 - 4/3 (Inception-style)
 function M.RandomSizedCrop(size)
-    local scale = M.Scale(size)
-    local crop = M.CenterCrop(size)
+   local scale = M.Scale(size)
+   local crop = M.CenterCrop(size)
 
-    return function(input)
-        local attempt = 0
-        repeat
-            local area = input:size(2) * input:size(3)
-            local targetArea = torch.uniform(0.08, 1.0) * area
+   return function(input)
+      local attempt = 0
+      repeat
+         local area = input:size(2) * input:size(3)
+         local targetArea = torch.uniform(0.08, 1.0) * area
 
-            local aspectRatio = torch.uniform(3/4, 4/3)
-            local w = torch.round(math.sqrt(targetArea) * aspectRatio)
-            local h = torch.round(math.sqrt(targetArea) / aspectRatio)
+         local aspectRatio = torch.uniform(3/4, 4/3)
+         local w = torch.round(math.sqrt(targetArea * aspectRatio))
+         local h = torch.round(math.sqrt(targetArea / aspectRatio))
 
-            if torch.uniform() < 0.5 then
-                w, h = h, w
-            end
+         if torch.uniform() < 0.5 then
+            w, h = h, w
+         end
 
-            if h <= input:size(2) and w <= input:size(3) then
-                local y1 = math.floor(torch.uniform(0, input:size(2) - h + 0.99))
-                local x1 = math.floor(torch.uniform(0, input:size(3) - w + 0.99))
+         if h <= input:size(2) and w <= input:size(3) then
+            local y1 = torch.random(0, input:size(2) - h)
+            local x1 = torch.random(0, input:size(3) - w)
 
-                local out = image.crop(input, x1, y1, x1 + w, y1 + h)
-                assert(out:size(2) == h and out:size(3) == w, 'wrong crop size')
+            local out = image.crop(input, x1, y1, x1 + w, y1 + h)
+            assert(out:size(2) == h and out:size(3) == w, 'wrong crop size')
 
-                return image.scale(out, size, size, 'bicubic')
-            end
-            attempt = attempt + 1
-        until attempt >= 10
+            return image.scale(out, size, size, 'bicubic')
+         end
+         attempt = attempt + 1
+      until attempt >= 10
 
-        -- fallback
-        return crop(scale(input))
-    end
+      -- fallback
+      return crop(scale(input))
+   end
 end
 
 function M.HorizontalFlip(prob)
-    return function(input)
-        if torch.uniform() < prob then
-            input = image.hflip(input)
-        end
-        return input
-    end
+   return function(input)
+      if torch.uniform() < prob then
+         input = image.hflip(input)
+      end
+      return input
+   end
 end
 
 function M.Rotation(deg)
-    return function(input)
-        if deg ~= 0 then
-            input = image.rotate(input, (torch.uniform() - 0.5) * deg * math.pi / 180, 'bilinear')
-        end
-        return input
-    end
+   return function(input)
+      if deg ~= 0 then
+         input = image.rotate(input, (torch.uniform() - 0.5) * deg * math.pi / 180, 'bilinear')
+      end
+      return input
+   end
 end
 
 -- Lighting noise (AlexNet-style PCA-based noise)
@@ -203,90 +203,90 @@ function M.Lighting(alphastd, eigval, eigvec)
 end
 
 local function blend(img1, img2, alpha)
-    return img1:mul(alpha):add(1 - alpha, img2)
+   return img1:mul(alpha):add(1 - alpha, img2)
 end
 
 local function grayscale(dst, img)
-    dst:resizeAs(img)
-    dst[1]:zero()
-    dst[1]:add(0.299, img[1]):add(0.587, img[2]):add(0.114, img[3])
-    dst[2]:copy(dst[1])
-    dst[3]:copy(dst[1])
-    return dst
+   dst:resizeAs(img)
+   dst[1]:zero()
+   dst[1]:add(0.299, img[1]):add(0.587, img[2]):add(0.114, img[3])
+   dst[2]:copy(dst[1])
+   dst[3]:copy(dst[1])
+   return dst
 end
 
 function M.Saturation(var)
-    local gs
+   local gs
 
-    return function(input)
-        gs = gs or input.new()
-        grayscale(gs, input)
+   return function(input)
+      gs = gs or input.new()
+      grayscale(gs, input)
 
-        local alpha = 1.0 + torch.uniform(-var, var)
-        blend(input, gs, alpha)
-        return input
-    end
+      local alpha = 1.0 + torch.uniform(-var, var)
+      blend(input, gs, alpha)
+      return input
+   end
 end
 
 function M.Brightness(var)
-    local gs
+   local gs
 
-    return function(input)
-        gs = gs or input.new()
-        gs:resizeAs(input):zero()
+   return function(input)
+      gs = gs or input.new()
+      gs:resizeAs(input):zero()
 
-        local alpha = 1.0 + torch.uniform(-var, var)
-        blend(input, gs, alpha)
-        return input
-    end
+      local alpha = 1.0 + torch.uniform(-var, var)
+      blend(input, gs, alpha)
+      return input
+   end
 end
 
 function M.Contrast(var)
-    local gs
+   local gs
 
-    return function(input)
-        gs = gs or input.new()
-        grayscale(gs, input)
-        gs:fill(gs[1]:mean())
+   return function(input)
+      gs = gs or input.new()
+      grayscale(gs, input)
+      gs:fill(gs[1]:mean())
 
-        local alpha = 1.0 + torch.uniform(-var, var)
-        blend(input, gs, alpha)
-        return input
-    end
+      local alpha = 1.0 + torch.uniform(-var, var)
+      blend(input, gs, alpha)
+      return input
+   end
 end
 
 function M.RandomOrder(ts)
-    return function(input)
-        local img = input.img or input
-        local order = torch.randperm(#ts)
-        for i=1,#ts do
-            img = ts[order[i]](img)
-        end
-        return input
-    end
+   return function(input)
+      local img = input.img or input
+      local order = torch.randperm(#ts)
+      for i=1,#ts do
+         img = ts[order[i]](img)
+      end
+      return input
+   end
 end
 
 function M.ColorJitter(opt)
-    local brightness = opt.brightness or 0
-    local contrast = opt.contrast or 0
-    local saturation = opt.saturation or 0
+   local brightness = opt.brightness or 0
+   local contrast = opt.contrast or 0
+   local saturation = opt.saturation or 0
 
-    local ts = {}
-    if brightness ~= 0 then
-        table.insert(ts, M.Brightness(brightness))
-    end
-    if contrast ~= 0 then
-        table.insert(ts, M.Contrast(contrast))
-    end
-    if saturation ~= 0 then
-        table.insert(ts, M.Saturation(saturation))
-    end
+   local ts = {}
+   if brightness ~= 0 then
+      table.insert(ts, M.Brightness(brightness))
+   end
+   if contrast ~= 0 then
+      table.insert(ts, M.Contrast(contrast))
+   end
+   if saturation ~= 0 then
+      table.insert(ts, M.Saturation(saturation))
+   end
 
-    if #ts == 0 then
-        return function(input) return input end
-    end
+   if #ts == 0 then
+      return function(input) return input end
+   end
 
-    return M.RandomOrder(ts)
+   return M.RandomOrder(ts)
 end
 
 return M
