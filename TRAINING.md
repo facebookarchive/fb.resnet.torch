@@ -55,8 +55,10 @@ For a complete list of flags, run `th main.lua --help`.
 ### shareGradInput
 
 The `-shareGradInput` flag enables sharing of `gradInput` tensors between modules of the same type. This reduces
-memory usage. It works correctly with the include ResNet models, but may not work for other network architectures. See 
-[models/init.lua](models/init.lua#L37-L55) for the implementation.
+memory usage. It works correctly with the included ResNet models, but may not work for other network architectures. See 
+[models/init.lua](models/init.lua#L42-L60) for the implementation.
+
+The `shareGradInput` implementation may not work with older versions of the `nn` package. Update your `nn` package by running `luarocks install nn`.
 
 ### shortcutType
 
