@@ -138,8 +138,12 @@ function Trainer:computeScore(output, target, nCrops)
    local correct = predictions:eq(
       target:long():view(batchSize, 1):expandAs(output))
 
-   local top1 = 1.0 - correct:narrow(2, 1, 1):sum() / batchSize
-   local top5 = 1.0 - correct:narrow(2, 1, 5):sum() / batchSize
+   -- Top-1 score
+   local top1 = 1.0 - (correct:narrow(2, 1, 1):sum() / batchSize)
+
+   -- Top-5 score, if there are at least 5 classes
+   local len = math.min(5, correct:size(2))
+   local top5 = 1.0 - (correct:narrow(2, 1, len):sum() / batchSize)
 
    return top1 * 100, top5 * 100
 end
