@@ -28,6 +28,9 @@ The ResNet-50 model has a batch normalization layer after the addition, instead 
 | ResNet-50     | 22.24       | 6.08        |
 | ResNet-101    | **21.08**   | **5.35**    |
 
+##### ImageNet charts
+
+See the [convergence plots](CONVERGENCE.md) for charts of training and validation error and training loss after every epoch.
 
 ### Fine-tuning on a custom dataset
 
