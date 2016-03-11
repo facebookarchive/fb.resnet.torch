@@ -51,6 +51,22 @@ th main.lua -retrain resnet-50.t7 -data [path-to-directory-with-train-and-val] -
 
 The labels will be sorted alphabetically. The first output of the network corresponds to the label that comes first alphabetically.
 
+### Classification
+To get the top 5 predicted of a model for a given input image, you can use the [`classify.lua`](classify.lua) script. For example:
+```bash
+th classify.lua resnet-101.t7 img1.jpg img2.jpg ...
+``` 
+Example output:
+```
+Classes for     cat.jpg
+0.77302575111389        Egyptian cat
+0.060410376638174       tabby, tabby cat 
+0.040622022002935       tiger cat
+0.025837801396847       lynx, catamount
+0.018691379576921       window screen
+```
+
+
 ### Extracting image features
 
 The [`extract-features.lua`](extract-features.lua) script will extract the image features from an image and save them as a serialized Torch tensor. To use it, first download one of the trained models above. Next run it using
