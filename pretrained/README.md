@@ -7,6 +7,7 @@ These are ResNet models trainined on ImageNet. The accuracy on the ImageNet vali
 - [ResNet-34](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-34.t7)
 - [ResNet-50](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-50.t7)
 - [ResNet-101](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-101.t7)
+- [ResNet-152](https://s3.amazonaws.com/sgross-deb4ce8637a36c926e0fabb513f03bfcae74f1b5/resnet-152.t7)
 
 The ResNet-50 model has a batch normalization layer after the addition, instead of immediately after the convolution layer.
 
@@ -17,7 +18,8 @@ The ResNet-50 model has a batch normalization layer after the addition, instead 
 | ResNet-18     | 30.43       | 10.76       |
 | ResNet-34     | 26.73       | 8.74        |
 | ResNet-50     | 24.01       | 7.02        |
-| ResNet-101    | **22.44**   | **6.21**    |
+| ResNet-101    | 22.44       | 6.21        |
+| ResNet-152    | **22.16**   | **6.16**    |
 
 ##### ImageNet 10-crop error rates
 
@@ -26,7 +28,8 @@ The ResNet-50 model has a batch normalization layer after the addition, instead 
 | ResNet-18     | 28.22       | 9.42        |
 | ResNet-34     | 24.76       | 7.35        |
 | ResNet-50     | 22.24       | 6.08        |
-| ResNet-101    | **21.08**   | **5.35**    |
+| ResNet-101    | 21.08       | 5.35        |
+| ResNet-152    | **20.69**   | **5.21**    |
 
 ##### ImageNet charts
 
