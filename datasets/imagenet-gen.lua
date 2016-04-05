@@ -48,7 +48,7 @@ local function findImages(dir, classToIdx)
    end
 
    -- Find all the images using the find command
-   local f = io.popen('find ' .. dir .. findOptions)
+   local f = io.popen('find -L ' .. dir .. findOptions)
 
    local maxLength = -1
    local imagePaths = {}
