@@ -8,10 +8,11 @@ These are ResNet models trainined on ImageNet. The accuracy on the ImageNet vali
 - [ResNet-50](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-50.t7)
 - [ResNet-101](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-101.t7)
 - [ResNet-152](https://s3.amazonaws.com/sgross-deb4ce8637a36c926e0fabb513f03bfcae74f1b5/resnet-152.t7)
+- [ResNet-200](https://s3.amazonaws.com/sgross-deb4ce8637a36c926e0fabb513f03bfcae74f1b5/resnet-200.t7)
 
-The ResNet-50 model has a batch normalization layer after the addition, instead of immediately after the convolution layer.
+The ResNet-50 model has a batch normalization layer after the addition, instead of immediately after the convolution layer. The ResNet-200 model is the full pre-activation variant from ["Identity Mappings in Deep Residual Networks"](http://arxiv.org/abs/1603.05027).
 
-##### ImageNet 1-crop error rates
+##### ImageNet 1-crop error rates (224x224)
 
 | Network       | Top-1 error | Top-5 error |
 | ------------- | ----------- | ----------- |
@@ -19,7 +20,8 @@ The ResNet-50 model has a batch normalization layer after the addition, instead 
 | ResNet-34     | 26.73       | 8.74        |
 | ResNet-50     | 24.01       | 7.02        |
 | ResNet-101    | 22.44       | 6.21        |
-| ResNet-152    | **22.16**   | **6.16**    |
+| ResNet-152    | 22.16       | 6.16        |
+| ResNet-200    | 21.66 <sup>[1](#notes)</sup> | 5.79        |
 
 ##### ImageNet 10-crop error rates
 
@@ -29,7 +31,8 @@ The ResNet-50 model has a batch normalization layer after the addition, instead 
 | ResNet-34     | 24.76       | 7.35        |
 | ResNet-50     | 22.24       | 6.08        |
 | ResNet-101    | 21.08       | 5.35        |
-| ResNet-152    | **20.69**   | **5.21**    |
+| ResNet-152    | 20.69       | 5.21        |
+| ResNet-200    | 20.15       | 4.93        |
 
 ##### ImageNet charts
 
@@ -83,3 +86,6 @@ This will save a file called `features.t7` in the current directory. You can the
 ```lua
 local features = torch.load('features.t7')
 ```
+
+### Notes
+<sup>1</sup> This is on a test crop of size 224x224. On a test crop of size 320x320, the error rate is 20.1/4.8.

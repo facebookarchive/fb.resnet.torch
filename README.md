@@ -34,11 +34,11 @@ th main.lua -depth 50 -batchSize 256 -nGPU 4 -nThreads 8 -shareGradInput true -d
 
 ## Trained models
 
-Trained ResNet 18, 34, 50, 101, and 152 models are [available for download](pretrained). We include instructions for [using a custom dataset](pretrained/README.md#fine-tuning-on-a-custom-dataset), [classifying an image and getting the model's top5 predictions](pretrained/README.md#classification), and for [extracting image features](pretrained/README.md#extracting-image-features) using a pre-trained model.
+Trained ResNet 18, 34, 50, 101, 152, and 200 models are [available for download](pretrained). We include instructions for [using a custom dataset](pretrained/README.md#fine-tuning-on-a-custom-dataset), [classifying an image and getting the model's top5 predictions](pretrained/README.md#classification), and for [extracting image features](pretrained/README.md#extracting-image-features) using a pre-trained model.
 
 The trained models achieve better error rates than the [original ResNet models](https://github.com/KaimingHe/deep-residual-networks).
 
-#### Single-crop validation error rate
+#### Single-crop (224x224) validation error rate
 
 | Network       | Top-1 error | Top-5 error |
 | ------------- | ----------- | ----------- |
@@ -46,7 +46,8 @@ The trained models achieve better error rates than the [original ResNet models](
 | ResNet-34     | 26.73       | 8.74        |
 | ResNet-50     | 24.01       | 7.02        |
 | ResNet-101    | 22.44       | 6.21        |
-| ResNet-152    | **22.16**   | **6.16**    |
+| ResNet-152    | 22.16       | 6.16        |
+| ResNet-200    | 21.66       | 5.79        |
 
 ## Notes
 
