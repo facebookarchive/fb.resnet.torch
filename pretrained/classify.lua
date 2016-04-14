@@ -38,6 +38,9 @@ local softMaxLayer = cudnn.SoftMax():cuda()
 -- add Softmax layer
 model:add(softMaxLayer)
 
+-- Evaluate mode
+model:evaluate()
+
 -- The model was trained with this input normalization
 local meanstd = {
    mean = { 0.485, 0.456, 0.406 },
