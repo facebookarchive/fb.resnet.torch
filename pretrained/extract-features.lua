@@ -35,6 +35,9 @@ local model = torch.load(arg[1])
 assert(torch.type(model:get(#model.modules)) == 'nn.Linear')
 model:remove(#model.modules)
 
+-- Evaluate mode
+model:evaluate()
+
 -- The model was trained with this input normalization
 local meanstd = {
    mean = { 0.485, 0.456, 0.406 },
