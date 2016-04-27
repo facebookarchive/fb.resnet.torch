@@ -38,7 +38,7 @@ local function createModel(opt)
             :add(nn.SpatialAveragePooling(1, 1, stride, stride))
             :add(nn.Concat(2)
                :add(nn.Identity())
-               :add(nn.MulConstant(0)))
+               :add(nn.Sequential():add(Convolution(nInputPlane, nOutputPlane-nInputPlane, 1, 1, 1, 1)):add(nn.MulConstant(0))))
       else
          return nn.Identity()
       end
