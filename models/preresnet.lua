@@ -32,7 +32,6 @@ local function createModel(opt)
          -- 1x1 convolution
          return nn.Sequential()
             :add(Convolution(nInputPlane, nOutputPlane, 1, 1, stride, stride))
-            :add(SBatchNorm(nOutputPlane))
       elseif nInputPlane ~= nOutputPlane then
          -- Strided, zero-padded identity shortcut
          return nn.Sequential()
@@ -51,8 +50,12 @@ local function createModel(opt)
       local nInputPlane = iChannels
       iChannels = n
 
+      local block = nn.Sequential()
       local s = nn.Sequential()
-      if type ~= 'first' then
+      if type == 'both_preact' then
+         block:add(SBatchNorm(nInputPlane))
+         block:add(ReLU(true))
+      elseif type ~= 'no_preact' then
          s:add(SBatchNorm(nInputPlane))
          s:add(ReLU(true))
       end
@@ -61,7 +64,7 @@ local function createModel(opt)
       s:add(ReLU(true))
       s:add(Convolution(n,n,3,3,1,1,1,1))
 
-      return nn.Sequential()
+      return block
          :add(nn.ConcatTable()
             :add(s)
             :add(shortcut(nInputPlane, n, stride)))
@@ -73,8 +76,12 @@ local function createModel(opt)
       local nInputPlane = iChannels
       iChannels = n * 4
 
+      local block = nn.Sequential()
       local s = nn.Sequential()
-      if type ~= 'first' then
+      if type == 'both_preact' then
+         block:add(SBatchNorm(nInputPlane))
+         block:add(ReLU(true))
+      elseif type ~= 'no_preact' then
          s:add(SBatchNorm(nInputPlane))
          s:add(ReLU(true))
       end
@@ -86,7 +93,7 @@ local function createModel(opt)
       s:add(ReLU(true))
       s:add(Convolution(n,n*4,1,1,1,1,0,0))
 
-      return nn.Sequential()
+      return block
          :add(nn.ConcatTable()
             :add(s)
             :add(shortcut(nInputPlane, n * 4, stride)))
@@ -96,8 +103,13 @@ local function createModel(opt)
    -- Creates count residual blocks with specified number of features
    local function layer(block, features, count, stride, type)
       local s = nn.Sequential()
-      for i=1,count do
-         s:add(block(features, i == 1 and stride or 1, type))
+      if count < 1 then
+        return s
+      end
+      s:add(block(features, stride,
+                  type == 'first' and 'no_preact' or 'both_preact'))
+      for i=2,count do
+         s:add(block(features, 1))
       end
       return s
    end
@@ -144,11 +156,10 @@ local function createModel(opt)
 
       -- The ResNet CIFAR-10 model
       model:add(Convolution(3,16,3,3,1,1,1,1))
-      model:add(SBatchNorm(16))
-      model:add(ReLU(true))
-      model:add(layer(basicblock, 16, n, 1, 'first'))
+      model:add(layer(basicblock, 16, n, 1))
       model:add(layer(basicblock, 32, n, 2))
       model:add(layer(basicblock, 64, n, 2))
+      model:add(nn.Copy(nil, nil, true))
       model:add(SBatchNorm(iChannels))
       model:add(ReLU(true))
       model:add(Avg(8, 8, 1, 1))
