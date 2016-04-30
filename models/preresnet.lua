@@ -82,7 +82,7 @@ local function createModel(opt)
       s:add(SBatchNorm(n))
       s:add(ReLU(true))
       s:add(Convolution(n,n,3,3,stride,stride,1,1))
-      s:add(SBatchNorm(n * 4))
+      s:add(SBatchNorm(n))
       s:add(ReLU(true))
       s:add(Convolution(n,n*4,1,1,1,1,0,0))
 
@@ -94,10 +94,10 @@ local function createModel(opt)
    end
 
    -- Creates count residual blocks with specified number of features
-   local function layer(block, features, count, stride)
+   local function layer(block, features, count, stride, type)
       local s = nn.Sequential()
       for i=1,count do
-         s:add(block(features, i == 1 and stride or 1))
+         s:add(block(features, i == 1 and stride or 1, type))
       end
       return s
    end
