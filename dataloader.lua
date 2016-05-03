@@ -33,6 +33,7 @@ function DataLoader:__init(dataset, opt, split)
       require('datasets/' .. opt.dataset)
    end
    local function main(idx)
+      torch.setnumthreads(1)
       _G.dataset = dataset
       _G.preprocess = dataset:preprocess()
       return dataset:size()

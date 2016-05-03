@@ -17,6 +17,7 @@ local opts = require 'opts'
 local checkpoints = require 'checkpoints'
 
 torch.setdefaulttensortype('torch.FloatTensor')
+torch.setnumthreads(1)
 
 local opt = opts.parse(arg)
 torch.manualSeed(opt.manualSeed)
