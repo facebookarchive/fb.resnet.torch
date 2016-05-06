@@ -44,6 +44,16 @@ local function createModel(opt)
       end
    end
 
+   -- Typically shareGradInput uses the same gradInput storage for all modules
+   -- of the same type. This is incorrect for some SpatialBatchNormalization
+   -- modules in this network b/c of the in-place CAddTable. This marks the
+   -- module so that it's shared only with other modules with the same key
+   local function ShareGradInput(module, key)
+      assert(key)
+      module.__shareGradInputKey = key
+      return module
+   end
+
    -- The basic residual layer block for 18 and 34 layer network, and the
    -- CIFAR networks
    local function basicblock(n, stride, type)
@@ -53,7 +63,7 @@ local function createModel(opt)
       local block = nn.Sequential()
       local s = nn.Sequential()
       if type == 'both_preact' then
-         block:add(SBatchNorm(nInputPlane))
+         block:add(ShareGradInput(SBatchNorm(nInputPlane), 'preact'))
          block:add(ReLU(true))
       elseif type ~= 'no_preact' then
          s:add(SBatchNorm(nInputPlane))
@@ -79,7 +89,7 @@ local function createModel(opt)
       local block = nn.Sequential()
       local s = nn.Sequential()
       if type == 'both_preact' then
-         block:add(SBatchNorm(nInputPlane))
+         block:add(ShareGradInput(SBatchNorm(nInputPlane), 'preact'))
          block:add(ReLU(true))
       elseif type ~= 'no_preact' then
          s:add(SBatchNorm(nInputPlane))
@@ -141,8 +151,7 @@ local function createModel(opt)
       model:add(layer(block, 128, def[2], 2))
       model:add(layer(block, 256, def[3], 2))
       model:add(layer(block, 512, def[4], 2))
-      model:add(nn.Copy(nil, nil, true))
-      model:add(SBatchNorm(iChannels))
+      model:add(ShareGradInput(SBatchNorm(iChannels), 'last'))
       model:add(ReLU(true))
       model:add(Avg(7, 7, 1, 1))
       model:add(nn.View(nFeatures):setNumInputDims(3))
@@ -159,8 +168,7 @@ local function createModel(opt)
       model:add(layer(basicblock, 16, n, 1))
       model:add(layer(basicblock, 32, n, 2))
       model:add(layer(basicblock, 64, n, 2))
-      model:add(nn.Copy(nil, nil, true))
-      model:add(SBatchNorm(iChannels))
+      model:add(ShareGradInput(SBatchNorm(iChannels), 'last'))
       model:add(ReLU(true))
       model:add(Avg(8, 8, 1, 1))
       model:add(nn.View(64):setNumInputDims(3))

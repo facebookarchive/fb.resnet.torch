@@ -53,7 +53,6 @@ local transform = t.Compose{
    t.CenterCrop(224),
 }
 
-local features
 local N = 5
 
 for i=2,#arg do
@@ -65,7 +64,7 @@ for i=2,#arg do
    img = transform(img)
 
    -- View as mini-batch of size 1
-   batch = img:view(1, table.unpack(img:size():totable()))
+   local batch = img:view(1, table.unpack(img:size():totable()))
 
    -- Get the output of the softmax
    local output = model:forward(batch:cuda()):squeeze()
@@ -79,4 +78,3 @@ for i=2,#arg do
    print('')
 
 end
-
