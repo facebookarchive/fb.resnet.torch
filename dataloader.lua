@@ -29,10 +29,14 @@ function DataLoader.create(opt)
 end
 
 function DataLoader:__init(dataset, opt, split)
+   local manualSeed = opt.manualSeed
    local function init()
       require('datasets/' .. opt.dataset)
    end
    local function main(idx)
+      if manualSeed ~= 0 then
+         torch.manualSeed(manualSeed + idx)
+      end
       torch.setnumthreads(1)
       _G.dataset = dataset
       _G.preprocess = dataset:preprocess()
