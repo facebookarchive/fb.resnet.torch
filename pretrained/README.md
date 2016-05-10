@@ -3,12 +3,12 @@ Trained ResNet Torch models
 
 These are ResNet models trainined on ImageNet. The accuracy on the ImageNet validation set are included below.
 
-- [ResNet-18](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-18.t7)
-- [ResNet-34](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-34.t7)
-- [ResNet-50](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-50.t7)
-- [ResNet-101](http://torch7.s3-website-us-east-1.amazonaws.com/data/resnet-101.t7)
-- [ResNet-152](https://s3.amazonaws.com/sgross-deb4ce8637a36c926e0fabb513f03bfcae74f1b5/resnet-152.t7)
-- [ResNet-200](https://s3.amazonaws.com/sgross-deb4ce8637a36c926e0fabb513f03bfcae74f1b5/resnet-200.t7)
+- [ResNet-18](https://d2j0dndfm35trm.cloudfront.net/resnet-18.t7)
+- [ResNet-34](https://d2j0dndfm35trm.cloudfront.net/resnet-34.t7)
+- [ResNet-50](https://d2j0dndfm35trm.cloudfront.net/resnet-50.t7)
+- [ResNet-101](https://d2j0dndfm35trm.cloudfront.net/resnet-101.t7)
+- [ResNet-152](https://d2j0dndfm35trm.cloudfront.net/resnet-152.t7)
+- [ResNet-200](https://d2j0dndfm35trm.cloudfront.net/resnet-200.t7)
 
 The ResNet-50 model has a batch normalization layer after the addition, instead of immediately after the convolution layer. The ResNet-200 model is the full pre-activation variant from ["Identity Mappings in Deep Residual Networks"](http://arxiv.org/abs/1603.05027).
 
