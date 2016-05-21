@@ -12,54 +12,36 @@
 local image = require 'image'
 local paths = require 'paths'
 local t = require 'datasets/transforms'
-local ffi = require 'ffi'
+local lmdb = require 'lmdb'
 
 local M = {}
-local ImagenetDataset = torch.class('resnet.ImagenetDataset', M)
+local ImagenetLMDBDataset = torch.class('resnet.ImagenetLMDBDataset', M)
 
-function ImagenetDataset:__init(imageInfo, opt, split)
+function ImagenetLMDBDataset:__init(imageInfo, opt, split)
    self.imageInfo = imageInfo[split]
    self.opt = opt
    self.split = split
-   self.dir = paths.concat(opt.data, split)
-   assert(paths.dirp(self.dir), 'directory does not exist: ' .. self.dir)
-end
+   --self.dir = paths.concat(opt.data, split)
+   --assert(paths.dirp(self.dir), 'directory does not exist: ' .. self.dir)
 
-function ImagenetDataset:get(i)
-   local path = ffi.string(self.imageInfo.imagePath[i]:data())
-
-   local image = self:_loadImage(paths.concat(self.dir, path))
-   local class = self.imageInfo.imageClass[i]
-
-   return {
-      input = image,
-      target = class,
+   self.env = lmdb.env{
+       Path = paths.concat(opt.data, string.format('%s_lmdb', split)),
+       Name = string.format('%s_lmdb', split)
    }
+   assert(env:open(), 'directory does not exist: ' .. string.format('%s_lmdb', split))
+   self.stat = env:stat() -- Current status
+
+   self.reader = env:txn(true) --Read-only transaction
+   self.idxs = torch.randperm(n_images)
+   assert(self.imageInfo.imageClass:size(1) == #self.idxs, string.format('Something wrong with lmdb. The lmdb db should have %d number of items, but it has %d', self.imageInfo.imageClass:size(1), #self.idxs))
 end
 
-function ImagenetDataset:_loadImage(path)
-   local ok, input = pcall(function()
-      return image.load(path, 3, 'float')
-   end)
-
-   -- Sometimes image.load fails because the file extension does not match the
-   -- image format. In that case, use image.decompress on a ByteTensor.
-   if not ok then
-      local f = io.open(path, 'r')
-      assert(f, 'Error reading: ' .. tostring(path))
-      local data = f:read('*a')
-      f:close()
-
-      local b = torch.ByteTensor(string.len(data))
-      ffi.copy(b:data(), data, b:size(1))
-
-      input = image.decompress(b, 3, 'float')
-   end
-
-   return input
+function ImagenetLMDBDataset:get(i)
+   local item = reader:get(string.format("%07d", self.idxs[i]))
+   return item
 end
 
-function ImagenetDataset:size()
+function ImagenetLMDBDataset:size()
    return self.imageInfo.imageClass:size(1)
 end
 
@@ -77,13 +59,10 @@ local pca = {
    },
 }
 
-function ImagenetDataset:preprocess(minSize, cropSize) 
-   -- minSize : 256, cropSize : 224 for resnet
-   -- minSize : 328, cropSize : 299 for inceptionv4 
-
+function ImagenetLMDBDataset:preprocess()
    if self.split == 'train' then
       return t.Compose{
-         t.RandomSizedCrop(cropSize),
+         t.RandomSizedCrop(224),
          t.ColorJitter({
             brightness = 0.4,
             contrast = 0.4,
@@ -96,13 +75,13 @@ function ImagenetDataset:preprocess(minSize, cropSize)
    elseif self.split == 'val' then
       local Crop = self.opt.tenCrop and t.TenCrop or t.CenterCrop
       return t.Compose{
-         t.Scale(minSize),
+         t.Scale(256),
          t.ColorNormalize(meanstd),
-         Crop(cropSize),
+         Crop(224),
       }
    else
       error('invalid split: ' .. self.split)
    end
 end
 
-return M.ImagenetDataset
+return M.ImagenetLMDBDataset

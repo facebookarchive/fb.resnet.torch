@@ -31,7 +31,7 @@ end
 
 function Trainer:train(epoch, dataloader)
    -- Trains the model for a single epoch
-   self.optimState.learningRate = self:learningRate(epoch)
+   --self.optimState.learningRate = self:learningRate(epoch)
 
    local timer = torch.Timer()
    local dataTimer = torch.Timer()
@@ -50,10 +50,21 @@ function Trainer:train(epoch, dataloader)
    for n, sample in dataloader:run() do
       local dataTime = dataTimer:time().real
 
+      -- Update learningRate
+      self.optimState.learningRate = self:learningRateStep(epoch, n, trainSize, self.opt.gamma, self.opt.step)
+
       -- Copy input and target to the GPU
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
+      --local output = self.model:forward(self.input)
+      --if type(output) == 'table' then 
+      --  for i = 1, #output do 
+      --    output[i]:float()
+      --  end
+      --else
+      --  output:float()
+      --end 
       local loss = self.criterion:forward(self.model.output, self.target)
 
       self.model:zeroGradParameters()
@@ -63,6 +74,12 @@ function Trainer:train(epoch, dataloader)
       optim.sgd(feval, self.params, self.optimState)
 
       local top1, top5 = self:computeScore(output, sample.target, 1)
+      --local top1, top5
+      --if type(output) == 'table' then 
+      --  top1, top5 = self:computeScore(output[1], sample.target, 1)
+      --else
+      --  top1, top5 = self:computeScore(output, sample.target, 1)
+      --end
       top1Sum = top1Sum + top1
       top5Sum = top5Sum + top5
       lossSum = lossSum + loss
@@ -100,9 +117,23 @@ function Trainer:test(epoch, dataloader)
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
+      --local output = self.model:forward(self.input)
+      --if type(output) == 'table' then
+      --  for i = 1, #output do
+      --    output[i]:float()
+      --  end
+      --else
+      --  output:float()
+      --end
       local loss = self.criterion:forward(self.model.output, self.target)
 
       local top1, top5 = self:computeScore(output, sample.target, nCrops)
+      --local top1, top5 
+      --if type(output) == 'table' then
+      --  top1, top5 = self:computeScore(output[1], sample.target, nCrops)
+      --else
+      --  top1, top5 = self:computeScore(output, sample.target, nCrops)
+      --end
       top1Sum = top1Sum + top1
       top5Sum = top5Sum + top5
       N = N + 1
@@ -169,6 +200,16 @@ function Trainer:learningRate(epoch)
       decay = epoch >= 122 and 2 or epoch >= 81 and 1 or 0
    end
    return self.opt.LR * math.pow(0.1, decay)
+end
+
+function Trainer:learningRateStep(epoch, iter, size, gamma, step)
+   -- epoch = current epoch  
+   -- iter  = current iter number
+   -- size  = num of data / batchsize
+   local iter_ = (epoch-1) * size + iter
+
+   -- Training schedule
+   return self.opt.LR * math.pow(gamma, torch.floor(iter_ / step))
 end
 
 return M.Trainer

@@ -110,7 +110,13 @@ function M.setup(opt, checkpoint)
       model = dpt:cuda()
    end
 
-   local criterion = nn.CrossEntropyCriterion():cuda()
+   local criterion
+   if opt.netType == 'inceptionv4aux' then 
+      local CE = nn.CrossEntropyCriterion()
+      criterion = nn.ParallelCriterion(true):add(CE):add(CE,0.3):add(CE,0.3):cuda()
+   else 
+      criterion = nn.CrossEntropyCriterion():cuda()
+   end
    return model, criterion
 end
 
