@@ -14,9 +14,8 @@
 --          th extract-features.lua [MODEL] [FILE] ...
 --
 -- BATCH MODE
---          th extract-features.lua [MODEL] [BATCH_SIZE] [DIRECTORY_CONTAINING_IMAGES] 
+--          th extract-features.lua [MODEL] [BATCH_SIZE] [DIRECTORY_CONTAINING_IMAGES]
 --
-      
 
 require 'torch'
 require 'paths'
@@ -25,51 +24,48 @@ require 'cunn'
 require 'image'
 local t = require '../datasets/transforms'
 
-
 if #arg < 2 then
    io.stderr:write('Usage (Single file mode): th extract-features.lua [MODEL] [FILE] ... \n')
    io.stderr:write('Usage (Batch mode)      : th extract-features.lua [MODEL] [BATCH_SIZE] [DIRECTORY_CONTAINING_IMAGES]  \n')
    os.exit(1)
 end
 
-
 -- get the list of files
-local list_of_filenames = {}
-local batch_size = 1
+local filenames = {}
+local batchSize = 1
 
 if not paths.filep(arg[1]) then
-    io.stderr:write('Model file not found at ' .. f .. '\n')
-    os.exit(1)
+   io.stderr:write('Model file not found at ' .. arg[1] .. '\n')
+   os.exit(1)
 end
-    
+
 
 if tonumber(arg[2]) ~= nil then -- batch mode ; collect file from directory
-    
-    local lfs  = require 'lfs'
-    batch_size = tonumber(arg[2])
-    dir_path   = arg[3]
+   local lfs  = require 'lfs'
+   batchSize = tonumber(arg[2])
+   local dir_path = arg[3]
 
-    for file in lfs.dir(dir_path) do -- get the list of the files
-        if file~="." and file~=".." then
-            table.insert(list_of_filenames, dir_path..'/'..file)
-        end
-    end
+   for file in lfs.dir(dir_path) do -- get the list of the files
+      if file ~= '.' and file ~= '..' then
+         table.insert(filenames, dir_path .. '/' .. file)
+      end
+   end
 
 else -- single file mode ; collect file from command line
-    for i=2, #arg do
-        f = arg[i]
-        if not paths.filep(f) then
-          io.stderr:write('file not found: ' .. f .. '\n')
-          os.exit(1)
-        else
-           table.insert(list_of_filenames, f)
-        end
-    end
+   for i=2, #arg do
+      local f = arg[i]
+      if not paths.filep(f) then
+         io.stderr:write('file not found: ' .. f .. '\n')
+         os.exit(1)
+      else
+         table.insert(filenames, f)
+      end
+   end
 end
 
-local number_of_files = table.getn(list_of_filenames)
-
-if batch_size > number_of_files then batch_size = number_of_files end
+if batchSize > #filenames then
+   batchSize = #filenames
+end
 
 -- Load the model
 local model = torch.load(arg[1])
@@ -93,42 +89,34 @@ local transform = t.Compose{
    t.CenterCrop(224),
 }
 
-local features
-
-for i=1,number_of_files,batch_size do
-    local img_batch = torch.FloatTensor(batch_size, 3, 224, 224) -- batch numbers are the 3 channels and size of transform 
-
-    -- preprocess the images for the batch
-    local image_count = 0
-    for j=1,batch_size do 
-        img_name = list_of_filenames[i+j-1] 
-
-        if img_name  ~= nil then
-            image_count = image_count + 1
-            local img = image.load(img_name, 3, 'float')
-            img = transform(img)
-            img_batch[{j, {}, {}, {} }] = img
-        end
-    end
-
-    -- if this is last batch it may not be the same size, so check that
-    if image_count ~= batch_size then
-        img_batch = img_batch[{{1,image_count}, {}, {}, {} } ]
-    end
-
-   -- Get the output of the layer before the (removed) fully connected layer
-   local output = model:forward(img_batch:cuda()):squeeze(1)
-
-
-   -- this is necesary because the model outputs different dimension based on size of input
-   if output:nDimension() == 1 then output = torch.reshape(output, 1, output:size(1)) end 
-
-   if not features then
-       features = torch.FloatTensor(number_of_files, output:size(2)):zero()
-   end
-       features[{ {i, i-1+image_count}, {}  } ]:copy(output)
-
+if #filenames == 1 then
+   print('Extracting features for ' .. filenames[1])
+else
+   print('Extracting features for ' .. #filenames .. ' images')
 end
 
-torch.save('features.t7', {features=features, image_list=list_of_filenames})
+local features
+
+for i = 1, #filenames, batchSize do
+   local sz = math.min(batchSize, #filenames - i + 1)
+   local input = torch.FloatTensor(sz, 3, 224, 224)
+
+   -- Load and preprocess the images for the batch
+   for j = 1, sz do
+      local filename = filenames[i+j-1]
+      input[j] = transform(image.load(filename, 3, 'float'))
+   end
+
+   -- Get the output of the layer before the (removed) fully connected layer
+   local output = model:forward(input:cuda())
+   assert(output:dim() == 2)
+
+   if not features then
+      features = torch.FloatTensor(#filenames, output:size(2)):zero()
+   end
+
+   features[{ {i, i-1+sz}, {} }]:copy(output)
+end
+
+torch.save('features.t7', { features = features, image_list = filenames })
 print('saved features to features.t7')
