@@ -33,9 +33,10 @@ function M.parse(arg)
    cmd:option('-tenCrop',         'false', 'Ten-crop testing')
    cmd:option('-resume',          'none',  'Path to directory containing checkpoint')
    ---------- Optimization options ----------------------
-   cmd:option('-LR',              0.1,   'initial learning rate')
-   cmd:option('-momentum',        0.9,   'momentum')
-   cmd:option('-weightDecay',     1e-4,  'weight decay')
+   cmd:option('-LR',                 0.1,     'initial learning rate')
+   cmd:option('-momentum',           0.9,     'momentum')
+   cmd:option('-weightDecay',        1e-4,    'weight decay')
+   cmd:option('-recomputeBatchNorm', 'false', 'recompute batch norm statistics')
    ---------- Model options ----------------------------------
    cmd:option('-netType',      'resnet', 'Options: resnet | preresnet')
    cmd:option('-depth',        34,       'ResNet depth: 18 | 34 | 50 | 101 | ...', 'number')
@@ -54,6 +55,7 @@ function M.parse(arg)
    opt.tenCrop = opt.tenCrop ~= 'false'
    opt.shareGradInput = opt.shareGradInput ~= 'false'
    opt.resetClassifier = opt.resetClassifier ~= 'false'
+   opt.recomputeBatchNorm = opt.recomputeBatchNorm ~= 'false'
 
    if opt.dataset == 'imagenet' then
       -- Handle the most common case of missing -data flag

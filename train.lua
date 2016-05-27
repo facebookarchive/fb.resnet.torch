@@ -33,8 +33,8 @@ function Trainer:train(epoch, dataloader)
    -- Trains the model for a single epoch
    self.optimState.learningRate = self:learningRate(epoch)
 
-   local timer = torch.Timer()
-   local dataTimer = torch.Timer()
+   local timer, dataTimer = torch.Timer(), torch.Timer()
+   local totalTime, totalDataTime = 0, 0
 
    local function feval()
       return self.criterion.output, self.gradParams
@@ -49,6 +49,7 @@ function Trainer:train(epoch, dataloader)
    self.model:training()
    for n, sample in dataloader:run() do
       local dataTime = dataTimer:time().real
+      totalDataTime = totalDataTime + dataTime
 
       -- Copy input and target to the GPU
       self:copyInputs(sample)
@@ -68,8 +69,10 @@ function Trainer:train(epoch, dataloader)
       lossSum = lossSum + loss
       N = N + 1
 
-      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
-         epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
+      local time = timer:time().real
+      totalTime = totalTime + time
+      print((' | Epoch: [%d][%d/%d]    Time %.3f (%.3f)  Data %.3f (%.3f)  Err %1.4f (%1.4f)  top1 %7.3f (%.3f)  top5 %7.3f (%6.3f)'):format(
+         epoch, n, trainSize, time, totalTime / N, dataTime, totalDataTime / N, loss, lossSum / N, top1, top1Sum / N, top5, top5Sum / N))
 
       -- check that the storage didn't get changed do to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
@@ -119,6 +122,69 @@ function Trainer:test(epoch, dataloader)
       epoch, top1Sum / N, top5Sum / N))
 
    return top1Sum / N, top5Sum / N
+end
+
+function Trainer:recomputeBatchNorm(dataloader)
+   local timer = torch.Timer()
+   local dataTimer = torch.Timer()
+
+   local size = math.min(1000, dataloader:size())
+   local N = 0
+
+   local batchNorms = {}
+   local means = {}
+   local variances = {}
+   local momentums = {}
+   for _, m in ipairs(self.model:listModules()) do
+      if torch.isTypeOf(m, 'nn.BatchNormalization') then
+         table.insert(batchNorms, m)
+         table.insert(means, m.running_mean:clone():zero())
+         table.insert(variances, m.running_var:clone():zero())
+         table.insert(momentums, m.momentum)
+         -- Set momentum to 1
+         m.momentum = 1
+      end
+   end
+
+   print('=> Recomputing batch normalization staticstics')
+   self.model:training()
+   for n, sample in dataloader:run() do
+      local dataTime = dataTimer:time().real
+
+      -- Copy input and target to the GPU
+      self:copyInputs(sample)
+
+      -- Compute forward pass
+      self.model:forward(self.input)
+
+      -- Update running sum of batch mean and variance
+      for i, sbn in ipairs(batchNorms) do
+         means[i]:add(sbn.running_mean)
+         variances[i]:add(sbn.running_var)
+      end
+      N = N + 1
+
+      print((' | BatchNorm: [%d/%d]    Time %.3f  Data %.3f'):format(
+         n, size, timer:time().real, dataTime))
+
+      timer:reset()
+      dataTimer:reset()
+
+      if N == size then
+         break
+      end
+   end
+
+   for i, sbn in ipairs(batchNorms) do
+      sbn.running_mean:copy(means[i]):div(N)
+      sbn.running_var:copy(variances[i]):div(N)
+      sbn.momentum = momentums[i]
+   end
+
+   -- Copy over running_mean/var from first GPU to other replicas, if using DPT
+   if torch.type(self.model) == 'nn.DataParallelTable' then
+      self.model.impl:applyChanges()
+   end
 end
 
 function Trainer:computeScore(output, target, nCrops)
