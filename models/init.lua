@@ -111,7 +111,7 @@ function M.setup(opt, checkpoint)
    end
 
    local criterion
-   if opt.netType == 'inceptionv4aux' then 
+   if opt.netType == 'inception-resnet-v2-aux' then 
       local CE = nn.CrossEntropyCriterion()
       criterion = nn.ParallelCriterion(true):add(CE):add(CE,0.3):add(CE,0.3):cuda()
    else 

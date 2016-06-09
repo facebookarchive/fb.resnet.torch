@@ -39,7 +39,7 @@ function DataLoader:__init(dataset, opt, split)
       end
       torch.setnumthreads(1)
       _G.dataset = dataset
-      if opt.netType == 'inceptionv4' or opt.netType == 'inceptionv4aux' then 
+      if opt.netType == 'inception-resnet-v2' or opt.netType == 'inception-resnet-v2-aux' then 
         _G.preprocess = dataset:preprocess(328, 299)
       else
         _G.preprocess = dataset:preprocess(256, 224)

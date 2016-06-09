@@ -79,7 +79,7 @@ local pca = {
 
 function ImagenetDataset:preprocess(minSize, cropSize) 
    -- minSize : 256, cropSize : 224 for resnet
-   -- minSize : 328, cropSize : 299 for inceptionv4 
+   -- minSize : 328, cropSize : 299 for inception-resnet-v2 
 
    if self.split == 'train' then
       return t.Compose{

@@ -84,16 +84,16 @@ input_rois = torch.cat(torch.floor(torch.rand(n_rois,1) * batch_size) + 1, input
 -- Create net w/ options
 print('Create network architectures')
 
---local createModel = paths.dofile('models/inceptionv4.lua')
-local createModel = paths.dofile('models/inceptionv4aux.lua')
+local createModel = paths.dofile('models/inception-resnet-v2.lua')
+--local createModel = paths.dofile('models/inception-resnet-v2-aux.lua')
 
 local opt = {}; 
 opt.cudnn = 'fastest'
 
 local model = createModel(opt) 
 
---local g = drawModel(model, input_image, 'inceptionv4-cls') 
-local g = drawModel(model, input_image, 'inceptionv4-cls-aux') 
+local g = drawModel(model, input_image, 'inception-resnet-v2') 
+--local g = drawModel(model, input_image, 'inception-resnet-v2-aux') 
 
 --local output = model:forward(input_image:cuda())
 --print(output)
