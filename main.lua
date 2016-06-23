@@ -54,17 +54,17 @@ for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
    local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
    trainLogger:add{
-         ['% top1 accuracy (train set)'] = trainTop1,
-         ['% top5 accuracy (train set)'] = trainTop5,
+         ['% top1 accuracy (train set)'] = 100-trainTop1,
+         ['% top5 accuracy (train set)'] = 100-trainTop5,
             ['avg loss (train set)'] = trainLoss
          }
 
    -- Run model on validation set
    local testTop1, testTop5, testLoss = trainer:test(epoch, valLoader)
    testLogger:add{
-         ['% top1 accuracy (train set)'] = testTop1,
-         ['% top5 accuracy (train set)'] = testTop5,
-            ['avg loss (train set)'] = testLoss
+         ['% top1 accuracy (test set)'] = 100-testTop1,
+         ['% top5 accuracy (test set)'] = 100-testTop5,
+            ['avg loss (test set)'] = testLoss
          }
 
 
