@@ -67,7 +67,7 @@ else -- single file mode ; collect file from command line
     end
 end
 
-local number_of_files = table.getn(list_of_filenames)
+local number_of_files = #list_of_filenames
 
 if batch_size > number_of_files then batch_size = number_of_files end
 
