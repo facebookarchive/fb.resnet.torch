@@ -54,7 +54,7 @@ function Trainer:train(epoch, dataloader)
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
-      local batchSize = output:size(1) / nCrops
+      local batchSize = output:size(1)
       local loss = self.criterion:forward(self.model.output, self.target)
 
       self.model:zeroGradParameters()
