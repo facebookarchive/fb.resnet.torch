@@ -36,8 +36,10 @@ function M.parse(arg)
    cmd:option('-LR',              0.1,   'initial learning rate')
    cmd:option('-momentum',        0.9,   'momentum')
    cmd:option('-weightDecay',     1e-4,  'weight decay')
+   cmd:option('-gamma',           0.96,  'gamma for learning rate policy (step)')
+   cmd:option('-step',            6400,  'step for learning rate policy (step)')
    ---------- Model options ----------------------------------
-   cmd:option('-netType',      'resnet', 'Options: resnet | preresnet')
+   cmd:option('-netType',      'resnet', 'Options: resnet | preresnet | inception-resnet-v2 | inception-resnet-v2-aux')
    cmd:option('-depth',        34,       'ResNet depth: 18 | 34 | 50 | 101 | ...', 'number')
    cmd:option('-shortcutType', '',       'Options: A | B | C')
    cmd:option('-retrain',      'none',   'Path to model to retrain with')
@@ -54,6 +56,12 @@ function M.parse(arg)
    opt.tenCrop = opt.tenCrop ~= 'false'
    opt.shareGradInput = opt.shareGradInput ~= 'false'
    opt.resetClassifier = opt.resetClassifier ~= 'false'
+
+   if opt.netType == 'inception-resnet-v2' or opt.netType == 'inception-resnet-v2-aux' then 
+      opt.momentum = 0.4737
+      opt.LR = 0.045 --45
+      opt.step = 12800
+   end 
 
    if opt.dataset == 'imagenet' then
       -- Handle the most common case of missing -data flag
