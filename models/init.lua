@@ -40,32 +40,7 @@ function M.setup(opt, checkpoint)
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all
    -- containers override backwards to call backwards recursively on submodules
    if opt.shareGradInput then
-      local function sharingKey(m)
-         local key = torch.type(m)
-         if m.__shareGradInputKey then
-            key = key .. ':' .. m.__shareGradInputKey
-         end
-         return key
-      end
-
-      -- Share gradInput for memory efficient backprop
-      local cache = {}
-      model:apply(function(m)
-         local moduleType = torch.type(m)
-         if torch.isTensor(m.gradInput) and moduleType ~= 'nn.ConcatTable' then
-            local key = sharingKey(m)
-            if cache[key] == nil then
-               cache[key] = torch.CudaStorage(1)
-            end
-            m.gradInput = torch.CudaTensor(cache[key], 1, 0)
-         end
-      end)
-      for i, m in ipairs(model:findModules('nn.ConcatTable')) do
-         if cache[i % 2] == nil then
-            cache[i % 2] = torch.CudaStorage(1)
-         end
-         m.gradInput = torch.CudaTensor(cache[i % 2], 1, 0)
-      end
+      M.shareGradInput(model)
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset
@@ -112,6 +87,35 @@ function M.setup(opt, checkpoint)
 
    local criterion = nn.CrossEntropyCriterion():cuda()
    return model, criterion
+end
+
+function M.shareGradInput(model)
+   local function sharingKey(m)
+      local key = torch.type(m)
+      if m.__shareGradInputKey then
+         key = key .. ':' .. m.__shareGradInputKey
+      end
+      return key
+   end
+
+   -- Share gradInput for memory efficient backprop
+   local cache = {}
+   model:apply(function(m)
+      local moduleType = torch.type(m)
+      if torch.isTensor(m.gradInput) and moduleType ~= 'nn.ConcatTable' then
+         local key = sharingKey(m)
+         if cache[key] == nil then
+            cache[key] = torch.CudaStorage(1)
+         end
+         m.gradInput = torch.CudaTensor(cache[key], 1, 0)
+      end
+   end)
+   for i, m in ipairs(model:findModules('nn.ConcatTable')) do
+      if cache[i % 2] == nil then
+         cache[i % 2] = torch.CudaStorage(1)
+      end
+      m.gradInput = torch.CudaTensor(cache[i % 2], 1, 0)
+   end
 end
 
 return M

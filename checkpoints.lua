@@ -25,7 +25,10 @@ function checkpoint.latest(opt)
    return latest, optimState
 end
 
-function checkpoint.save(epoch, model, optimState, bestModel)
+function checkpoint.save(epoch, model, optimState, isBestModel, opt)
+   -- Remove temporary buffers to reduce checkpoint size
+   model:clearState()
+
    -- Don't save the DataParallelTable for easier loading on other machines
    if torch.type(model) == 'nn.DataParallelTable' then
       model = model:get(1)
@@ -34,16 +37,23 @@ function checkpoint.save(epoch, model, optimState, bestModel)
    local modelFile = 'model_' .. epoch .. '.t7'
    local optimFile = 'optimState_' .. epoch .. '.t7'
 
-   torch.save(modelFile, model)
-   torch.save(optimFile, optimState)
-   torch.save('latest.t7', {
+   torch.save(paths.concat(opt.save, modelFile), model)
+   torch.save(paths.concat(opt.save, optimFile), optimState)
+   torch.save(paths.concat(opt.save, 'latest.t7'), {
       epoch = epoch,
       modelFile = modelFile,
       optimFile = optimFile,
    })
 
-   if bestModel then
-      torch.save('model_best.t7', model)
+   if isBestModel then
+      torch.save(paths.concat(opt.save, 'model_best.t7'), model)
+   end
+
+   -- Re-use gradInput buffers if the option is set. This is necessary because
+   -- of the model:clearState() call clears sharing.
+   if opt.shareGradInput then
+      local models = require 'models/init'
+      models.shareGradInput(model)
    end
 end
 
