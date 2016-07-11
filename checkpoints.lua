@@ -31,8 +31,8 @@ function checkpoint.save(epoch, model, optimState, bestModel, folder)
       model = model:get(1)
    end
 
-   if not paths.dirp(path) then
-      paths.mkdir(path)
+   if not paths.dirp(folder) then
+      paths.mkdir(folder)
    end
 
    local modelFile = paths.concat(folder, 'model_' .. epoch .. '.t7')
