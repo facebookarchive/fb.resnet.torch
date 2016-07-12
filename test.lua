@@ -6,10 +6,8 @@
 --  LICENSE file in the root directory of this source tree. An additional grant
 --  of patent rights can be found in the PATENTS file in the same directory.
 --
--- require 'torch'
---
--- torch.setdefaulttensortype('torch.FloatTensor')
--- torch.setnumthreads(1)
+
+local ffi = require 'ffi'
 
 local M = {}
 local Tester = torch.class('resnet.Tester', M)
@@ -57,8 +55,8 @@ function Tester:test(dataloader)
     file = io.open('output.csv', 'w')
 
     for i=1,(predictions:size(1)) do
-       print(predictions[i])
-       s = indices[i]
+       local path = ffi.string(dataloader.dataset.imageInfo.imagePath[indices[i]]:data())
+       s = path
        for j=1,4 do
             s = s..','..predictions[i][j]
        end
