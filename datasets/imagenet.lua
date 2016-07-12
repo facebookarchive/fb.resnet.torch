@@ -90,7 +90,7 @@ function ImagenetDataset:preprocess()
          t.ColorNormalize(meanstd),
          t.HorizontalFlip(0.5),
       }
-   elseif self.split == 'val' then
+   elseif self.split == 'val' or self.split == 'test' then
       local Crop = self.opt.tenCrop and t.TenCrop or t.CenterCrop
       return t.Compose{
          t.Scale(256),

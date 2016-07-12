@@ -13,6 +13,7 @@ require 'nn'
 local DataLoader = require 'dataloader'
 local models = require 'models/init'
 local Trainer = require 'train'
+local Tester = require 'test'
 local opts = require 'opts'
 local checkpoints = require 'checkpoints'
 
@@ -30,7 +31,7 @@ local checkpoint, optimState = checkpoints.latest(opt)
 local model, criterion = models.setup(opt, checkpoint)
 
 -- Data loading
-local trainLoader, valLoader = DataLoader.create(opt)
+local trainLoader, valLoader, testLoader = DataLoader.create(opt)
 
 -- The trainer handles the training loop and evaluation on validation set
 local trainer = Trainer(model, criterion, opt, optimState)
@@ -38,6 +39,12 @@ local trainer = Trainer(model, criterion, opt, optimState)
 if opt.testOnly then
    local top1Err, top5Err = trainer:test(0, valLoader)
    print(string.format(' * Results top1: %6.3f  top5: %6.3f', top1Err, top5Err))
+   return
+end
+
+if opt.predictionsOnly then
+   local tester = Tester(model, opt)
+   tester:test(testLoader)
    return
 end
 

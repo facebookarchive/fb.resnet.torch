@@ -20,7 +20,7 @@ function DataLoader.create(opt)
    -- The train and val loader
    local loaders = {}
 
-   for i, split in ipairs{'train', 'val'} do
+   for i, split in ipairs{'train', 'val', 'test'} do
       local dataset = datasets.create(opt, split)
       loaders[i] = M.DataLoader(dataset, opt, split)
    end
