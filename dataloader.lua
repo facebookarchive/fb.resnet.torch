@@ -83,6 +83,7 @@ function DataLoader:run()
                return {
                   input = batch:view(sz * nCrops, table.unpack(imageSize)),
                   target = target,
+                  idx = indices,
                }
             end,
             function(_sample_)

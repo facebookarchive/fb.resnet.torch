@@ -108,9 +108,7 @@ local function findTestImages(dir)
       local line = f:read('*line')
       if not line then break end
 
-      local className = paths.basename(paths.dirname(line))
-      local filename = paths.basename(line)
-      local path = className .. '/' .. filename
+      local path = paths.basename(line)
 
       table.insert(imagePaths, path)
 
@@ -126,7 +124,8 @@ local function findTestImages(dir)
       ffi.copy(imagePath[i]:data(), path)
    end
 
-   return imagePath
+   local imageClass = torch.LongTensor(nImages):zero() - 1
+   return imagePath, imageClass
 end
 
 function M.exec(opt, cacheFile)
@@ -150,7 +149,7 @@ function M.exec(opt, cacheFile)
    local trainImagePath, trainImageClass = findImages(trainDir, classToIdx)
 
    print(" | finding all test images")
-   local testImagePath = findTestImages(testDir)
+   local testImagePath, testImageClass = findTestImages(testDir)
 
    local info = {
       basedir = opt.data,
@@ -165,6 +164,7 @@ function M.exec(opt, cacheFile)
       },
       test = {
          imagePath = testImagePath,
+         imageClass = testImageClass,
       },
    }
 

@@ -7,7 +7,6 @@
 --  of patent rights can be found in the PATENTS file in the same directory.
 --
 -- require 'torch'
-require 'nn'
 
 -- torch.setdefaulttensortype('torch.FloatTensor')
 -- torch.setnumthreads(1)
@@ -20,29 +19,36 @@ function Tester:__init(model, opt)
    self.nCrops = opt.tenCrop and 10 or 1
 end
 
-function Trainer:test(dataloader)
+function Tester:test(dataloader)
    self.model:evaluate()
 
-   local predictions = {}
    local timer = torch.Timer()
    local size = dataloader:size()
+   local numImages = dataloader.__size
+   local indices = torch.Tensor(numImages):zero()
+  --  Num classes??????
+   local predictions = torch.Tensor(numImages, 4):zero()
+   local numProcessed = 0
 
    for n, sample in dataloader:run() do
-      local output = model:forward(sample.input:cuda():contiguous()):float()
+      local output = self.model:forward(sample.input:cuda():contiguous()):float()
       if self.nCrops > 1 then
         -- Sum over crops
         output = output:view(output:size(1) / nCrops, nCrops, output:size(2))
           --:exp()
           :sum(2):squeeze(2)
-       output = output / nCrops
-    end
+         output = output / nCrops
+      end
 
-    for i=1,(#output)[1] do
-       predictions[count] = {['name']=sample.path[i], ['output']=output[i]}
-    end
-    print((' | Test: [%d/%d]    Time %.3f '):format(
-       n, size, timer:time().real))
-    timer:reset()
+      local start = numProcessed + 1
+      local stop = numProcessed + output:size(1)
+      indices[{{start, stop}}] = sample.idx
+      predictions[{{start, stop}, {}}] = output
+      print((' | Test: [%d/%d]    Time %.3f '):format(
+             n, size, timer:time().real))
+      timer:reset()
+      numProcessed = numProcessed + output:size(1)
+   end
 
 
 
@@ -50,14 +56,16 @@ function Trainer:test(dataloader)
 
     file = io.open('output.csv', 'w')
 
-    for i=1,(len(predictions)-1) do
+    for i=1,(predictions:size(1)) do
        print(predictions[i])
-       s = predictions[i]['name']
+       s = indices[i]
        for j=1,4 do
-            s = s..','..predictions[i]['output'][j]
+            s = s..','..predictions[i][j]
        end
        file:write(s..'\n')
     end
 
     file.close()
 end
+
+return M.Tester
