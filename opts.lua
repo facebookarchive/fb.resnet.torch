@@ -30,7 +30,7 @@ function M.parse(arg)
    cmd:option('-epochNumber',     1,       'Manual epoch number (useful on restarts)')
    cmd:option('-batchSize',       32,      'mini-batch size (1 = pure stochastic)')
    cmd:option('-testOnly',        'false', 'Run on validation set only')
-   cmd:option('-predictionsOnly', 'false', 'Run on test set only and produce file with predictions')
+   cmd:option('-predict',         'false', 'Run on test set only and produce file with predictions')
    cmd:option('-tenCrop',         'false', 'Ten-crop testing')
    cmd:option('-resume',          'none',  'Path to directory containing checkpoint')
    ---------- Optimization options ----------------------
@@ -52,7 +52,7 @@ function M.parse(arg)
    local opt = cmd:parse(arg or {})
 
    opt.testOnly = opt.testOnly ~= 'false'
-   opt.predictionsOnly = opt.predictionsOnly ~= 'false'
+   opt.predict = opt.predict ~= 'false'
    opt.tenCrop = opt.tenCrop ~= 'false'
    opt.shareGradInput = opt.shareGradInput ~= 'false'
    opt.resetClassifier = opt.resetClassifier ~= 'false'

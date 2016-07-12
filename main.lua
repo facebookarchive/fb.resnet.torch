@@ -42,7 +42,7 @@ if opt.testOnly then
    return
 end
 
-if opt.predictionsOnly then
+if opt.predict then
    local tester = Tester(model, opt)
    paths, predictions = tester:test(testLoader)
    torch.save('output.t7', {paths = paths, predictions = predictions})
