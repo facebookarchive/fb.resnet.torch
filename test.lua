@@ -48,22 +48,11 @@ function Tester:test(dataloader)
       numProcessed = numProcessed + output:size(1)
    end
 
-
-
-
-
-    file = io.open('output.csv', 'w')
-
-    for i=1,(predictions:size(1)) do
-       local path = ffi.string(dataloader.dataset.imageInfo.imagePath[indices[i]]:data())
-       s = path
-       for j=1,4 do
-            s = s..','..predictions[i][j]
-       end
-       file:write(s..'\n')
-    end
-
-    file.close()
+   local paths = {}
+   for i=1,(predictions:size(1)) do
+      paths[i] = ffi.string(dataloader.dataset.imageInfo.imagePath[indices[i]]:data())
+   end
+   return paths, predictions
 end
 
 return M.Tester
