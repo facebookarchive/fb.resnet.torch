@@ -44,7 +44,7 @@ function DataLoader:__init(dataset, opt, split)
    end
 
    local threads, sizes = Threads(opt.nThreads, init, main)
-   self.nCrops = (split == 'val' and opt.tenCrop) and 10 or 1
+   self.nCrops = ((split == 'val' or split == 'test') and opt.tenCrop) and 10 or 1
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)

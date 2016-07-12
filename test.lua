@@ -34,10 +34,10 @@ function Tester:test(dataloader)
       local output = self.model:forward(sample.input:cuda():contiguous()):float()
       if self.nCrops > 1 then
         -- Sum over crops
-        output = output:view(output:size(1) / nCrops, nCrops, output:size(2))
+        output = output:view(output:size(1) / self.nCrops, self.nCrops, output:size(2))
           --:exp()
           :sum(2):squeeze(2)
-         output = output / nCrops
+         output = output / self.nCrops
       end
 
       local start = numProcessed + 1
