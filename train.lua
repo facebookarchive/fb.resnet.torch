@@ -54,6 +54,7 @@ function Trainer:train(epoch, dataloader)
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
+      local batchSize = output:size(1)
       local loss = self.criterion:forward(self.model.output, self.target)
 
       self.model:zeroGradParameters()
@@ -63,10 +64,10 @@ function Trainer:train(epoch, dataloader)
       optim.sgd(feval, self.params, self.optimState)
 
       local top1, top5 = self:computeScore(output, sample.target, 1)
-      top1Sum = top1Sum + top1
-      top5Sum = top5Sum + top5
-      lossSum = lossSum + loss
-      N = N + 1
+      top1Sum = top1Sum + top1*batchSize
+      top5Sum = top5Sum + top5*batchSize
+      lossSum = lossSum + loss*batchSize
+      N = N + batchSize
 
       print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
          epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
@@ -100,12 +101,13 @@ function Trainer:test(epoch, dataloader)
       self:copyInputs(sample)
 
       local output = self.model:forward(self.input):float()
+      local batchSize = output:size(1) / nCrops
       local loss = self.criterion:forward(self.model.output, self.target)
 
       local top1, top5 = self:computeScore(output, sample.target, nCrops)
-      top1Sum = top1Sum + top1
-      top5Sum = top5Sum + top5
-      N = N + 1
+      top1Sum = top1Sum + top1*batchSize
+      top5Sum = top5Sum + top5*batchSize
+      N = N + batchSize
 
       print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f  top1 %7.3f (%7.3f)  top5 %7.3f (%7.3f)'):format(
          epoch, n, size, timer:time().real, dataTime, top1, top1Sum / N, top5, top5Sum / N))
