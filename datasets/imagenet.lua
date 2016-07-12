@@ -19,6 +19,7 @@ local ImagenetDataset = torch.class('resnet.ImagenetDataset', M)
 
 function ImagenetDataset:__init(imageInfo, opt, split)
    self.imageInfo = imageInfo[split]
+   self.classList = imageInfo['classList']
    self.opt = opt
    self.split = split
    self.dir = paths.concat(opt.data, split)

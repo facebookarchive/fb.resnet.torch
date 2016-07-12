@@ -7,7 +7,7 @@
 --  of patent rights can be found in the PATENTS file in the same directory.
 --
 -- require 'torch'
-
+--
 -- torch.setdefaulttensortype('torch.FloatTensor')
 -- torch.setnumthreads(1)
 
@@ -26,8 +26,8 @@ function Tester:test(dataloader)
    local size = dataloader:size()
    local numImages = dataloader.__size
    local indices = torch.Tensor(numImages):zero()
-  --  Num classes??????
-   local predictions = torch.Tensor(numImages, 4):zero()
+   local numClasses = #dataloader.dataset.classList
+   local predictions = torch.Tensor(numImages, numClasses):zero()
    local numProcessed = 0
 
    for n, sample in dataloader:run() do

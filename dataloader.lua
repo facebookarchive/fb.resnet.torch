@@ -48,6 +48,7 @@ function DataLoader:__init(dataset, opt, split)
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
+   self.dataset = dataset
 end
 
 function DataLoader:size()
