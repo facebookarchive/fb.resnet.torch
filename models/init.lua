@@ -14,6 +14,8 @@ require 'nn'
 require 'cunn'
 require 'cudnn'
 
+local optnet = require 'optnet'
+
 local M = {}
 
 function M.setup(opt, checkpoint)
@@ -40,7 +42,9 @@ function M.setup(opt, checkpoint)
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all
    -- containers override backwards to call backwards recursively on submodules
    if opt.shareGradInput then
-      M.shareGradInput(model)
+      local imsize = opt.dataset == 'imagenet' and 224 or 32
+      local sample_input = torch.randn(4,3,imsize,imsize):cuda()
+      optnet.optimizeMemory(model, sample_input, {inplace = false, mode = 'training'})
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset

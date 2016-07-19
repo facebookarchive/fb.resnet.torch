@@ -6,8 +6,34 @@
 --  LICENSE file in the root directory of this source tree. An additional grant
 --  of patent rights can be found in the PATENTS file in the same directory.
 --
+local optnet = require 'optnet'
 
 local checkpoint = {}
+
+-- this creates a copy of a network with new modules and the same tensors
+local function deepCopy(tbl)
+   if type(tbl) == "table" then
+      local copy = { }
+      for k, v in pairs(tbl) do
+         if type(v) == "table" then
+            copy[k] = deepCopy(v)
+         else
+            copy[k] = v
+         end
+      end
+      if torch.typename(tbl) then
+         torch.setmetatable(copy, torch.typename(tbl))
+      end
+      return copy
+   else
+      return tbl
+   end
+end
+
+-- this will return a float network leaving the original cuda network untouched
+local function floatCopy(model)
+   return deepCopy(model):float()
+end
 
 function checkpoint.latest(opt)
    if opt.resume == 'none' then
@@ -22,11 +48,13 @@ function checkpoint.latest(opt)
    print('=> Loading checkpoint ' .. latestPath)
    local latest = torch.load(latestPath)
    local optimState = torch.load(paths.concat(opt.resume, latest.optimFile))
+
    return latest, optimState
 end
 
 function checkpoint.save(epoch, model, optimState, isBestModel, opt)
    local function saveModel(m)
+      m = floatCopy(model):clearState()
       local modelFile = 'model_' .. epoch .. '.t7'
       local optimFile = 'optimState_' .. epoch .. '.t7'
 
@@ -43,21 +71,11 @@ function checkpoint.save(epoch, model, optimState, isBestModel, opt)
       end
    end
 
-   -- Remove temporary buffers to reduce checkpoint size
-   model:clearState()
-
    -- Don't save the DataParallelTable for easier loading on other machines
    if torch.type(model) == 'nn.DataParallelTable' then
       saveModel(model:get(1))
    else
       saveModel(model)
-   end
-
-   -- Re-use gradInput buffers if the option is set. This is necessary because
-   -- of the model:clearState() call clears sharing.
-   if opt.shareGradInput then
-      local models = require 'models/init'
-      models.shareGradInput(model)
    end
 end
 
