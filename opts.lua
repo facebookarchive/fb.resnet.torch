@@ -46,6 +46,7 @@ function M.parse(arg)
    cmd:option('-optimState',   'none',   'Path to an optimState to reload from')
    ---------- Model options ----------------------------------
    cmd:option('-shareGradInput',  'false', 'Share gradInput tensors to reduce memory usage')
+   cmd:option('-optnet',          'false', 'Use optnet to reduce memory usage')
    cmd:option('-resetClassifier', 'false', 'Reset the fully connected layer for fine-tuning')
    cmd:option('-nClasses',         0,      'Number of classes in the dataset')
    cmd:text()
@@ -55,6 +56,7 @@ function M.parse(arg)
    opt.testOnly = opt.testOnly ~= 'false'
    opt.tenCrop = opt.tenCrop ~= 'false'
    opt.shareGradInput = opt.shareGradInput ~= 'false'
+   opt.optnet = opt.optnet ~= 'false'
    opt.resetClassifier = opt.resetClassifier ~= 'false'
 
    if not paths.dirp(opt.save) and not paths.mkdir(opt.save) then
@@ -84,6 +86,10 @@ function M.parse(arg)
       if opt.nClasses == 0 then
          cmd:error('-nClasses required when resetClassifier is set')
       end
+   end
+
+   if opt.shareGradInput and opt.optnet then
+      cmd:error('error: cannot use both -shareGradInput and -optnet')
    end
 
    return opt
