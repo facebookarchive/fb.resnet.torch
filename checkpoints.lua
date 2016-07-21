@@ -6,33 +6,22 @@
 --  LICENSE file in the root directory of this source tree. An additional grant
 --  of patent rights can be found in the PATENTS file in the same directory.
 --
-local optnet = require 'optnet'
-
 local checkpoint = {}
 
--- this creates a copy of a network with new modules and the same tensors
 local function deepCopy(tbl)
-   if type(tbl) == "table" then
-      local copy = { }
-      for k, v in pairs(tbl) do
-         if type(v) == "table" then
-            copy[k] = deepCopy(v)
-         else
-            copy[k] = v
-         end
+   -- creates a copy of a network with new modules and the same tensors
+   local copy = {}
+   for k, v in pairs(tbl) do
+      if type(v) == 'table' then
+         copy[k] = deepCopy(v)
+      else
+         copy[k] = v
       end
-      if torch.typename(tbl) then
-         torch.setmetatable(copy, torch.typename(tbl))
-      end
-      return copy
-   else
-      return tbl
    end
-end
-
--- this will return a float network leaving the original cuda network untouched
-local function floatCopy(model)
-   return deepCopy(model):float()
+   if torch.typename(tbl) then
+      torch.setmetatable(copy, torch.typename(tbl))
+   end
+   return copy
 end
 
 function checkpoint.latest(opt)
@@ -53,29 +42,27 @@ function checkpoint.latest(opt)
 end
 
 function checkpoint.save(epoch, model, optimState, isBestModel, opt)
-   local function saveModel(m)
-      m = floatCopy(model):clearState()
-      local modelFile = 'model_' .. epoch .. '.t7'
-      local optimFile = 'optimState_' .. epoch .. '.t7'
-
-      torch.save(paths.concat(opt.save, modelFile), m)
-      torch.save(paths.concat(opt.save, optimFile), optimState)
-      torch.save(paths.concat(opt.save, 'latest.t7'), {
-         epoch = epoch,
-         modelFile = modelFile,
-         optimFile = optimFile,
-      })
-
-      if isBestModel then
-         torch.save(paths.concat(opt.save, 'model_best.t7'), m)
-      end
+   -- don't save the DataParallelTable for easier loading on other machines
+   if torch.type(model) == 'nn.DataParallelTable' then
+      model = model:get(1)
    end
 
-   -- Don't save the DataParallelTable for easier loading on other machines
-   if torch.type(model) == 'nn.DataParallelTable' then
-      saveModel(model:get(1))
-   else
-      saveModel(model)
+   -- create a clean copy on the CPU without modifying the original network
+   model = deepCopy(model):float():clearState()
+
+   local modelFile = 'model_' .. epoch .. '.t7'
+   local optimFile = 'optimState_' .. epoch .. '.t7'
+
+   torch.save(paths.concat(opt.save, modelFile), model)
+   torch.save(paths.concat(opt.save, optimFile), optimState)
+   torch.save(paths.concat(opt.save, 'latest.t7'), {
+      epoch = epoch,
+      modelFile = modelFile,
+      optimFile = optimFile,
+   })
+
+   if isBestModel then
+      torch.save(paths.concat(opt.save, 'model_best.t7'), model)
    end
 end
 

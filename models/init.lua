@@ -14,8 +14,6 @@ require 'nn'
 require 'cunn'
 require 'cudnn'
 
-local optnet = require 'optnet'
-
 local M = {}
 
 function M.setup(opt, checkpoint)
@@ -39,12 +37,18 @@ function M.setup(opt, checkpoint)
       model = model:get(1)
    end
 
+   -- optnet is an general library for reducing memory usage in neural networks
+   if opt.optnet then
+      local optnet = require 'optnet'
+      local imsize = opt.dataset == 'imagenet' and 224 or 32
+      local sampleInput = torch.zeros(4,3,imsize,imsize):cuda()
+      optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'training'})
+   end
+
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all
    -- containers override backwards to call backwards recursively on submodules
    if opt.shareGradInput then
-      local imsize = opt.dataset == 'imagenet' and 224 or 32
-      local sample_input = torch.randn(4,3,imsize,imsize):cuda()
-      optnet.optimizeMemory(model, sample_input, {inplace = false, mode = 'training'})
+      M.shareGradInput(model)
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset
