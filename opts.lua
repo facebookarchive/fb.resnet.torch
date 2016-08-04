@@ -58,7 +58,7 @@ function M.parse(arg)
    opt.resetClassifier = opt.resetClassifier ~= 'false'
 
    if opt.netType == 'inception-resnet-v2' or opt.netType == 'inception-resnet-v2-aux' then 
-      opt.momentum = 0.4737
+      --opt.momentum = 0.4737
       opt.LR = 0.045 --45
       opt.step = 12800
    end 
