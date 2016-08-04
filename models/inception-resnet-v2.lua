@@ -109,7 +109,7 @@ local function InceptionResnetA(fs_start) -- fig 16
   net:add(nn.ConcatTable():add(path1)
                           :add(path2)
                           )
-  net:add(nn.CAddTable(true)) 
+  net:add(nn.CAddTable()) 
   net:add(ReLU(true))
  
   local fs_final = fs2[#fs2] 
@@ -157,7 +157,7 @@ local function InceptionResnetB(fs_start) -- fig 17
   net:add(nn.ConcatTable():add(path1)
                           :add(path2)
                           )
-  net:add(nn.CAddTable(true))
+  net:add(nn.CAddTable())
   net:add(ReLU(true))
 
   local fs_final = fs2[#fs2]
@@ -218,7 +218,7 @@ local function InceptionResnetC(fs_start) -- fig 19
   net:add(nn.ConcatTable():add(path1)
                           :add(path2)
                           )
-  net:add(nn.CAddTable(true))
+  net:add(nn.CAddTable())
   net:add(ReLU(true))
 
   local fs_final = fs2[#fs2]
