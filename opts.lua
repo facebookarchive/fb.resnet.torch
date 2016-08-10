@@ -17,7 +17,7 @@ function M.parse(arg)
    cmd:text('Options:')
     ------------ General options --------------------
    cmd:option('-data',       '',         'Path to dataset')
-   cmd:option('-dataset',    'imagenet', 'Options: imagenet | cifar10')
+   cmd:option('-dataset',    'imagenet', 'Options: imagenet | cifar10 | cifar100')
    cmd:option('-manualSeed', 0,          'Manually set RNG seed')
    cmd:option('-nGPU',       1,          'Number of GPUs to use by default')
    cmd:option('-backend',    'cudnn',    'Options: cudnn | cunn')
@@ -78,6 +78,10 @@ function M.parse(arg)
       -- Default shortcutType=A and nEpochs=164
       opt.shortcutType = opt.shortcutType == '' and 'A' or opt.shortcutType
       opt.nEpochs = opt.nEpochs == 0 and 164 or opt.nEpochs
+   elseif opt.dataset == 'cifar100' then
+       -- Default shortcutType=A and nEpochs=164
+       opt.shortcutType = opt.shortcutType == '' and 'A' or opt.shortcutType
+       opt.nEpochs = opt.nEpochs == 0 and 164 or opt.nEpochs
    else
       cmd:error('unknown dataset: ' .. opt.dataset)
    end

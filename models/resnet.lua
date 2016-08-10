@@ -143,6 +143,23 @@ local function createModel(opt)
       model:add(Avg(8, 8, 1, 1))
       model:add(nn.View(64):setNumInputDims(3))
       model:add(nn.Linear(64, 10))
+   elseif opt.dataset == 'cifar100' then
+      -- Model type specifies number of layers for CIFAR-100 model
+      assert((depth - 2) % 6 == 0, 'depth should be one of 20, 32, 44, 56, 110, 1202')
+      local n = (depth - 2) / 6
+      iChannels = 16
+      print(' | ResNet-' .. depth .. ' CIFAR-100')
+
+      -- The ResNet CIFAR-100 model
+      model:add(Convolution(3,16,3,3,1,1,1,1))
+      model:add(SBatchNorm(16))
+      model:add(ReLU(true))
+      model:add(layer(basicblock, 16, n))
+      model:add(layer(basicblock, 32, n, 2))
+      model:add(layer(basicblock, 64, n, 2))
+      model:add(Avg(8, 8, 1, 1))
+      model:add(nn.View(64):setNumInputDims(3))
+      model:add(nn.Linear(64, 100))
    else
       error('invalid dataset: ' .. opt.dataset)
    end
