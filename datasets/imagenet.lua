@@ -49,7 +49,11 @@ function ImagenetDataset:_loadImage(path)
       assert(f, 'Error reading: ' .. tostring(path))
       local data = f:read('*a')
       f:close()
-
+      if data == nil then
+         print('unable to read file: ' .. tostring(path))
+         -- In this bad case, just fill a mean image.
+         return torch.FloatTensor(3, 256, 256):fill(.5)
+      end
       local b = torch.ByteTensor(string.len(data))
       ffi.copy(b:data(), data, b:size(1))
 
