@@ -38,7 +38,7 @@ local list_of_filenames = {}
 local batch_size = 1
 
 if not paths.filep(arg[1]) then
-    io.stderr:write('Model file not found at ' .. f .. '\n')
+    io.stderr:write('Model file not found at ' .. arg[1] .. '\n')
     os.exit(1)
 end
     
