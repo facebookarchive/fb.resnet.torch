@@ -3,6 +3,8 @@
 Each dataset consist of two files: `dataset-gen.lua` and `dataset.lua`. The `dataset-gen.lua` is responsible for one-time setup, while
 the `dataset.lua` handles the actual data loading.
 
+If you want to be able to use the new dataset from main.lua, you should also modify `opts.lua` to handle the new dataset name.
+
 ### `dataset-gen.lua`
 
 The `dataset-gen.lua` performs any necessary one-time setup. For example, the [`cifar10-gen.lua`](cifar10-gen.lua) file downloads the CIFAR-10 dataset, and the [`imagenet-gen.lua`](imagenet-gen.lua) file indexes all the training and validation data.
