@@ -49,13 +49,15 @@ val/<label1>/<image.jpg>
 val/<label2>/<image.jpg>
 ```
 
-You can then use the included [ImageNet data loader](datasets/imagenet.lua) with your dataset and train with the `-resetClassifer` and `-nClasses` options:
+You can then use the included [ImageNet data loader](../datasets/imagenet.lua) with your dataset and train with the `-resetClassifer` and `-nClasses` options:
 
 ```bash
 th main.lua -retrain resnet-50.t7 -data [path-to-directory-with-train-and-val] -resetClassifier true -nClasses 80
 ```
 
 The labels will be sorted alphabetically. The first output of the network corresponds to the label that comes first alphabetically.
+
+You can find how to create custom data loader in [datasets](../datasets) readme.
 
 ### Classification
 To get the top 5 predicted of a model for a given input image, you can use the [`classify.lua`](classify.lua) script. For example:
