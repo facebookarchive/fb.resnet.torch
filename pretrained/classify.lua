@@ -32,7 +32,7 @@ end
 
 
 -- Load the model
-local model = torch.load(arg[1])
+local model = torch.load(arg[1]):cuda()
 local softMaxLayer = cudnn.SoftMax():cuda()
 
 -- add Softmax layer
