@@ -101,6 +101,15 @@ function M.setup(opt, checkpoint)
       model = dpt:cuda()
    end
 
+   if(opt.printModel) then
+     print("*************************************")
+     print("********** Model Topology  **********")
+     print("*************************************")
+     print(model)
+     print("*************************************")
+     print("*************************************")
+   end
+
    local criterion = nn.CrossEntropyCriterion():cuda()
    return model, criterion
 end
@@ -172,7 +181,7 @@ function M.attachSpatialTransformer(model, imageSize)
       fullyConnectedLayerWithIdentityAffineTransform.bias[2] = 1.0 -- no scaling
       fullyConnectedLayerWithIdentityAffineTransform.bias[3] = 0.0 -- zero x translation
       fullyConnectedLayerWithIdentityAffineTransform.bias[4] = 0.0 -- zero y translation
-      
+
       localizationNetwork:add(fullyConnectedLayerWithIdentityAffineTransform)
       return localizationNetwork:cuda()
    end
