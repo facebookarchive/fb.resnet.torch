@@ -13,7 +13,6 @@
 require 'nn'
 require 'cunn'
 require 'cudnn'
-require 'stn'
 
 local M = {}
 
@@ -144,12 +143,13 @@ function M.shareGradInput(model)
 end
 
 function M.attachSpatialTransformer(model, imageSize)
+   local stn = require 'stn'
    local Convolution = cudnn.SpatialConvolution
    local ReLU = cudnn.ReLU
    local SBatchNorm = nn.SpatialBatchNormalization
 
    -- Initialization for ReLU networks described in "Delving Deep Into Rectifiers: Surprassing Human-Level Performance on ImageNet Classification"
-   function getRandomizedConvolutionalLayer(nInputPlane, nOutputPlane, stride, filterSize, padding)
+	 function getRandomizedConvolutionalLayer(nInputPlane, nOutputPlane, stride, filterSize, padding)
       local convolution = Convolution(nInputPlane, nOutputPlane, filterSize, filterSize, stride, stride, padding, padding)
       local numberOfConnections = nInputPlane * nOutputPlane * filterSize * filterSize
       local standardDeviation = math.sqrt(2.0 / numberOfConnections)
@@ -192,13 +192,13 @@ function M.attachSpatialTransformer(model, imageSize)
       local shortcutTranspose = nn.Transpose({3,4},{2,4})
       local spatialTransformerBranch = nn.Sequential()
       spatialTransformerBranch:add(localization_network)
-      spatialTransformerBranch:add(nn.AffineTransformMatrixGenerator(true, true, true))
-      spatialTransformerBranch:add(nn.AffineGridGeneratorBHWD(imageSize, imageSize))
+      spatialTransformerBranch:add(stn.AffineTransformMatrixGenerator(true, true, true))
+      spatialTransformerBranch:add(stn.AffineGridGeneratorBHWD(imageSize, imageSize))
       concatTable:add(shortcutTranspose)
       concatTable:add(spatialTransformerBranch)
       local spatialTransformerModule = nn.Sequential()
       spatialTransformerModule:add(concatTable)
-      spatialTransformerModule:add(nn.BilinearSamplerBHWD())
+      spatialTransformerModule:add(stn.BilinearSamplerBHWD())
       spatialTransformerModule:add(nn.Transpose({2,4},{3,4}))
       return spatialTransformerModule:cuda()
    end
