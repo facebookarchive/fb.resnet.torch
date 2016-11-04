@@ -13,6 +13,7 @@
 require 'nn'
 require 'cunn'
 require 'cudnn'
+require 'stn'
 
 local M = {}
 
@@ -37,11 +38,12 @@ function M.setup(opt, checkpoint)
       model = model:get(1)
    end
 
+   local imageSize = opt.dataset == 'imagenet' and 224 or 32
+
    -- optnet is an general library for reducing memory usage in neural networks
    if opt.optnet then
       local optnet = require 'optnet'
-      local imsize = opt.dataset == 'imagenet' and 224 or 32
-      local sampleInput = torch.zeros(4,3,imsize,imsize):cuda()
+      local sampleInput = torch.zeros(4,3,imageSize,imageSize):cuda()
       optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'training'})
    end
 
@@ -49,6 +51,12 @@ function M.setup(opt, checkpoint)
    -- containers override backwards to call backwards recursively on submodules
    if opt.shareGradInput then
       M.shareGradInput(model)
+   end
+
+   -- Attach a spatial transformer as the first block of the network
+   -- initialied as an identity affine transform
+   if opt.attachSpatialTransformer then
+     M.attachSpatialTransformer(model, imageSize)
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset
@@ -124,6 +132,71 @@ function M.shareGradInput(model)
       end
       m.gradInput = torch.CudaTensor(cache[i % 2], 1, 0)
    end
+end
+
+function M.attachSpatialTransformer(model, imageSize)
+   local Convolution = cudnn.SpatialConvolution
+   local ReLU = cudnn.ReLU
+   local SBatchNorm = nn.SpatialBatchNormalization
+
+   -- Initialization for ReLU networks described in "Delving Deep Into Rectifiers: Surprassing Human-Level Performance on ImageNet Classification"
+   function getRandomizedConvolutionalLayer(nInputPlane, nOutputPlane, stride, filterSize, padding)
+      local convolution = Convolution(nInputPlane, nOutputPlane, filterSize, filterSize, stride, stride, padding, padding)
+      local numberOfConnections = nInputPlane * nOutputPlane * filterSize * filterSize
+      local standardDeviation = math.sqrt(2.0 / numberOfConnections)
+      convolution.weight = torch.randn(convolution.weight:size()) * standardDeviation
+      convolution.weight:cuda()
+      convolution.bias:zero()
+      return convolution
+   end
+
+   function getLocationNetwork(nOutputPlane, stride)
+      local nInputPlane = 3 -- RGB raw image channels
+      local spatialParameters = 4 -- Normal-Surface-Angle-Rotation + Scale + X-Translation + Y-Translation
+      local localizationNetwork = nn.Sequential()
+      localizationNetwork:add(getRandomizedConvolutionalLayer(nInputPlane, nOutputPlane, stride, 3, 1))
+      localizationNetwork:add(SBatchNorm(nOutputPlane))
+      localizationNetwork:add(ReLU(true))
+      localizationNetwork:add(getRandomizedConvolutionalLayer(nOutputPlane, nOutputPlane, stride, 3, 1))
+      localizationNetwork:add(SBatchNorm(nOutputPlane))
+      localizationNetwork:add(ReLU(true))
+      localizationNetwork:add(getRandomizedConvolutionalLayer(nOutputPlane, nOutputPlane, stride, 3, 1))
+      localizationNetwork:add(SBatchNorm(nOutputPlane))
+      localizationNetwork:add(ReLU(true))
+
+      -- fully connected layer created using convolutional layer with filters that span the whole input spatial space
+      local inputSizeInLastLayer = (imageSize / (stride * stride * stride) )
+      local fullyConnectedLayerWithIdentityAffineTransform = Convolution(nOutputPlane, spatialParameters, inputSizeInLastLayer, inputSizeInLastLayer, 1, 1, 0, 0)
+      fullyConnectedLayerWithIdentityAffineTransform.weight:zero()
+      fullyConnectedLayerWithIdentityAffineTransform.bias[1] = 0.0 -- zero angle rotation
+      fullyConnectedLayerWithIdentityAffineTransform.bias[2] = 1.0 -- no scaling
+      fullyConnectedLayerWithIdentityAffineTransform.bias[3] = 0.0 -- zero x translation
+      fullyConnectedLayerWithIdentityAffineTransform.bias[4] = 0.0 -- zero y translation
+      
+      localizationNetwork:add(fullyConnectedLayerWithIdentityAffineTransform)
+      return localizationNetwork:cuda()
+   end
+
+   function getSpatialTransformer()
+      local localization_network = getLocationNetwork(16, 2)
+      local concatTable = nn.ConcatTable()
+      local shortcutTranspose = nn.Transpose({3,4},{2,4})
+      local spatialTransformerBranch = nn.Sequential()
+      spatialTransformerBranch:add(localization_network)
+      spatialTransformerBranch:add(nn.AffineTransformMatrixGenerator(true, true, true))
+      spatialTransformerBranch:add(nn.AffineGridGeneratorBHWD(imageSize, imageSize))
+      concatTable:add(shortcutTranspose)
+      concatTable:add(spatialTransformerBranch)
+      local spatialTransformerModule = nn.Sequential()
+      spatialTransformerModule:add(concatTable)
+      spatialTransformerModule:add(nn.BilinearSamplerBHWD())
+      spatialTransformerModule:add(nn.Transpose({2,4},{3,4}))
+      return spatialTransformerModule:cuda()
+   end
+
+   local spatialTransformer = getSpatialTransformer()
+   model:insert(spatialTransformer, 1)
+   return model
 end
 
 return M

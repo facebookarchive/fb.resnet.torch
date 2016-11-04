@@ -44,6 +44,7 @@ function M.parse(arg)
    cmd:option('-shortcutType', '',       'Options: A | B | C')
    cmd:option('-retrain',      'none',   'Path to model to retrain with')
    cmd:option('-optimState',   'none',   'Path to an optimState to reload from')
+   cmd:option('-attachSpatialTransformer', 'false', 'Attach a spatial transformer as the first block to the loaded model. The spatial transformer is initialized to x1 scaling (no scaling), zero translation and zero rotation.')
    ---------- Model options ----------------------------------
    cmd:option('-shareGradInput',  'false', 'Share gradInput tensors to reduce memory usage')
    cmd:option('-optnet',          'false', 'Use optnet to reduce memory usage')
@@ -58,6 +59,7 @@ function M.parse(arg)
    opt.shareGradInput = opt.shareGradInput ~= 'false'
    opt.optnet = opt.optnet ~= 'false'
    opt.resetClassifier = opt.resetClassifier ~= 'false'
+   opt.attachSpatialTransformer = opt.attachSpatialTransformer ~= 'false'
 
    if not paths.dirp(opt.save) and not paths.mkdir(opt.save) then
       cmd:error('error: unable to create checkpoint directory: ' .. opt.save .. '\n')
