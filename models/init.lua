@@ -27,6 +27,7 @@ function M.setup(opt, checkpoint)
       assert(paths.filep(opt.retrain), 'File not found: ' .. opt.retrain)
       print('Loading model from file: ' .. opt.retrain)
       model = torch.load(opt.retrain):cuda()
+      model.__memoryOptimized = nil
    else
       print('=> Creating model from file: models/' .. opt.netType .. '.lua')
       model = require('models/' .. opt.netType)(opt)
