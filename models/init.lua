@@ -22,11 +22,11 @@ function M.setup(opt, checkpoint)
       local modelPath = paths.concat(opt.resume, checkpoint.modelFile)
       assert(paths.filep(modelPath), 'Saved model not found: ' .. modelPath)
       print('=> Resuming model from ' .. modelPath)
-      model = torch.load(modelPath):cuda()
+      model = torch.load(modelPath):type(opt.tensorType)
    elseif opt.retrain ~= 'none' then
       assert(paths.filep(opt.retrain), 'File not found: ' .. opt.retrain)
       print('Loading model from file: ' .. opt.retrain)
-      model = torch.load(opt.retrain):cuda()
+      model = torch.load(opt.retrain):type(opt.tensorType)
       model.__memoryOptimized = nil
    else
       print('=> Creating model from file: models/' .. opt.netType .. '.lua')
@@ -42,7 +42,7 @@ function M.setup(opt, checkpoint)
    if opt.optnet then
       local optnet = require 'optnet'
       local imsize = opt.dataset == 'imagenet' and 224 or 32
-      local sampleInput = torch.zeros(4,3,imsize,imsize):cuda()
+      local sampleInput = torch.zeros(4,3,imsize,imsize):type(opt.tensorType)
       optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'training'})
    end
 
@@ -64,7 +64,7 @@ function M.setup(opt, checkpoint)
       linear.bias:zero()
 
       model:remove(#model.modules)
-      model:add(linear:cuda())
+      model:add(linear:type(opt.tensorType))
    end
 
    -- Set the CUDNN flags
@@ -91,10 +91,10 @@ function M.setup(opt, checkpoint)
          end)
       dpt.gradInput = nil
 
-      model = dpt:cuda()
+      model = dpt:type(opt.tensorType)
    end
 
-   local criterion = nn.CrossEntropyCriterion():cuda()
+   local criterion = nn.CrossEntropyCriterion():type(opt.tensorType)
    return model, criterion
 end
 

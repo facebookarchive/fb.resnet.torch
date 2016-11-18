@@ -221,7 +221,7 @@ local function createModel(opt)
    for k,v in pairs(model:findModules('nn.Linear')) do
       v.bias:zero()
    end
-   model:cuda()
+   model:type(opt.tensorType)
 
    if opt.cudnn == 'deterministic' then
       model:apply(function(m)

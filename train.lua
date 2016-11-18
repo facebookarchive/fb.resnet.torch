@@ -154,9 +154,9 @@ function Trainer:copyInputs(sample)
    -- Copies the input to a CUDA tensor, if using 1 GPU, or to pinned memory,
    -- if using DataParallelTable. The target is always copied to a CUDA tensor
    self.input = self.input or (self.opt.nGPU == 1
-      and torch.CudaTensor()
+      and torch[self.opt.tensorType:match('torch.(%a+)')]()
       or cutorch.createCudaHostTensor())
-   self.target = self.target or (torch.CudaLongTensor and torch.CudaLongTensor()or torch.CudaTensor())
+   self.target = self.target or (torch.CudaLongTensor and torch.CudaLongTensor() or torch[self.opt.tensorType:match('torch.(%a+)')]())
    self.input:resize(sample.input:size()):copy(sample.input)
    self.target:resize(sample.target:size()):copy(sample.target)
 end
