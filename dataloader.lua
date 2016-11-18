@@ -48,6 +48,16 @@ function DataLoader:__init(dataset, opt, split)
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
+   local function getCPUType(tensorType)
+      if tensorType == 'torch.CudaHalfTensor' then
+         return 'HalfTensor'
+      elseif tensorType == 'torch.CudaDoubleTensor' then
+         return 'DoubleTensor'
+      else
+         return 'FloatTensor'
+      end
+   end
+   self.cpuType = getCPUType(opt.tensorType)
 end
 
 function DataLoader:size()
@@ -64,7 +74,7 @@ function DataLoader:run()
       while idx <= size and threads:acceptsjob() do
          local indices = perm:narrow(1, idx, math.min(batchSize, size - idx + 1))
          threads:addjob(
-            function(indices, nCrops)
+            function(indices, nCrops, cpuType)
                local sz = indices:size(1)
                local batch, imageSize
                local target = torch.IntTensor(sz)
@@ -74,7 +84,7 @@ function DataLoader:run()
                   if not batch then
                      imageSize = input:size():totable()
                      if nCrops > 1 then table.remove(imageSize, 1) end
-                     batch = torch.FloatTensor(sz, nCrops, table.unpack(imageSize))
+                     batch = torch[cpuType](sz, nCrops, table.unpack(imageSize))
                   end
                   batch[i]:copy(input)
                   target[i] = sample.target
@@ -89,7 +99,8 @@ function DataLoader:run()
                sample = _sample_
             end,
             indices,
-            self.nCrops
+            self.nCrops,
+            self.cpuType
          )
          idx = idx + batchSize
       end

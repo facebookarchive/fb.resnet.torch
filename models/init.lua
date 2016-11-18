@@ -22,11 +22,11 @@ function M.setup(opt, checkpoint)
       local modelPath = paths.concat(opt.resume, checkpoint.modelFile)
       assert(paths.filep(modelPath), 'Saved model not found: ' .. modelPath)
       print('=> Resuming model from ' .. modelPath)
-      model = torch.load(modelPath):cuda()
+      model = torch.load(modelPath):type(opt.tensorType)
    elseif opt.retrain ~= 'none' then
       assert(paths.filep(opt.retrain), 'File not found: ' .. opt.retrain)
       print('Loading model from file: ' .. opt.retrain)
-      model = torch.load(opt.retrain):cuda()
+      model = torch.load(opt.retrain):type(opt.tensorType)
       model.__memoryOptimized = nil
    else
       print('=> Creating model from file: models/' .. opt.netType .. '.lua')
@@ -42,14 +42,14 @@ function M.setup(opt, checkpoint)
    if opt.optnet then
       local optnet = require 'optnet'
       local imsize = opt.dataset == 'imagenet' and 224 or 32
-      local sampleInput = torch.zeros(4,3,imsize,imsize):cuda()
+      local sampleInput = torch.zeros(4,3,imsize,imsize):type(opt.tensorType)
       optnet.optimizeMemory(model, sampleInput, {inplace = false, mode = 'training'})
    end
 
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all
    -- containers override backwards to call backwards recursively on submodules
    if opt.shareGradInput then
-      M.shareGradInput(model)
+      M.shareGradInput(model, opt)
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset
@@ -64,7 +64,7 @@ function M.setup(opt, checkpoint)
       linear.bias:zero()
 
       model:remove(#model.modules)
-      model:add(linear:cuda())
+      model:add(linear:type(opt.tensorType))
    end
 
    -- Set the CUDNN flags
@@ -91,14 +91,14 @@ function M.setup(opt, checkpoint)
          end)
       dpt.gradInput = nil
 
-      model = dpt:cuda()
+      model = dpt:type(opt.tensorType)
    end
 
-   local criterion = nn.CrossEntropyCriterion():cuda()
+   local criterion = nn.CrossEntropyCriterion():type(opt.tensorType)
    return model, criterion
 end
 
-function M.shareGradInput(model)
+function M.shareGradInput(model, opt)
    local function sharingKey(m)
       local key = torch.type(m)
       if m.__shareGradInputKey then
@@ -114,16 +114,16 @@ function M.shareGradInput(model)
       if torch.isTensor(m.gradInput) and moduleType ~= 'nn.ConcatTable' then
          local key = sharingKey(m)
          if cache[key] == nil then
-            cache[key] = torch.CudaStorage(1)
+            cache[key] = torch[self.opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')]()(1)
          end
-         m.gradInput = torch.CudaTensor(cache[key], 1, 0)
+         m.gradInput = torch[opt.tensorType:match('torch.(%a+)')](cache[key], 1, 0)
       end
    end)
    for i, m in ipairs(model:findModules('nn.ConcatTable')) do
       if cache[i % 2] == nil then
          cache[i % 2] = torch.CudaStorage(1)
       end
-      m.gradInput = torch.CudaTensor(cache[i % 2], 1, 0)
+      m.gradInput = torch[self.opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')](cache[i % 2], 1, 0)
    end
 end
 
