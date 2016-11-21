@@ -262,7 +262,7 @@ function M.RandomOrder(ts)
       for i=1,#ts do
          img = ts[order[i]](img)
       end
-      return input
+      return img
    end
 end
 
