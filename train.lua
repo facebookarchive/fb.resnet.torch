@@ -156,7 +156,7 @@ function Trainer:copyInputs(sample)
    self.input = self.input or (self.opt.nGPU == 1
       and torch[self.opt.tensorType:match('torch.(%a+)')]()
       or cutorch.createCudaHostTensor())
-   self.target = self.target or (torch.CudaLongTensor and torch.CudaLongTensor() or torch[self.opt.tensorType:match('torch.(%a+)')]())
+   self.target = self.target or (torch.CudaLongTensor and torch.CudaLongTensor())
    self.input:resize(sample.input:size()):copy(sample.input)
    self.target:resize(sample.target:size()):copy(sample.target)
 end
