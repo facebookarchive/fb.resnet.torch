@@ -49,7 +49,7 @@ function M.setup(opt, checkpoint)
    -- This is useful for fitting ResNet-50 on 4 GPUs, but requires that all
    -- containers override backwards to call backwards recursively on submodules
    if opt.shareGradInput then
-      M.shareGradInput(model)
+      M.shareGradInput(model, opt)
    end
 
    -- For resetting the classifier when fine-tuning on a different Dataset
@@ -98,7 +98,7 @@ function M.setup(opt, checkpoint)
    return model, criterion
 end
 
-function M.shareGradInput(model)
+function M.shareGradInput(model, opt)
    local function sharingKey(m)
       local key = torch.type(m)
       if m.__shareGradInputKey then
@@ -114,16 +114,16 @@ function M.shareGradInput(model)
       if torch.isTensor(m.gradInput) and moduleType ~= 'nn.ConcatTable' then
          local key = sharingKey(m)
          if cache[key] == nil then
-            cache[key] = torch.CudaStorage(1)
+            cache[key] = torch[self.opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')]()(1)
          end
-         m.gradInput = torch.CudaTensor(cache[key], 1, 0)
+         m.gradInput = torch[opt.tensorType:match('torch.(%a+)')](cache[key], 1, 0)
       end
    end)
    for i, m in ipairs(model:findModules('nn.ConcatTable')) do
       if cache[i % 2] == nil then
          cache[i % 2] = torch.CudaStorage(1)
       end
-      m.gradInput = torch.CudaTensor(cache[i % 2], 1, 0)
+      m.gradInput = torch[self.opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')](cache[i % 2], 1, 0)
    end
 end
 
