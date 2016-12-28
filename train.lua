@@ -72,7 +72,7 @@ function Trainer:train(epoch, dataloader)
       print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
          epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
 
-      -- check that the storage didn't get changed do to an unfortunate getParameters call
+      -- check that the storage didn't get changed due to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
 
       timer:reset()
