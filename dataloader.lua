@@ -20,7 +20,7 @@ function DataLoader.create(opt)
    -- The train and val loader
    local loaders = {}
 
-   for i, split in ipairs{'train', 'val'} do
+   for i, split in ipairs{'train', 'val', 'test'} do
       local dataset = datasets.create(opt, split)
       loaders[i] = M.DataLoader(dataset, opt, split)
    end
@@ -44,10 +44,11 @@ function DataLoader:__init(dataset, opt, split)
    end
 
    local threads, sizes = Threads(opt.nThreads, init, main)
-   self.nCrops = (split == 'val' and opt.tenCrop) and 10 or 1
+   self.nCrops = ((split == 'val' or split == 'test') and opt.tenCrop) and 10 or 1
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
+   self.dataset = dataset
 end
 
 function DataLoader:size()
@@ -83,6 +84,7 @@ function DataLoader:run()
                return {
                   input = batch:view(sz * nCrops, table.unpack(imageSize)),
                   target = target,
+                  idx = indices,
                }
             end,
             function(_sample_)

@@ -19,6 +19,7 @@ local ImagenetDataset = torch.class('resnet.ImagenetDataset', M)
 
 function ImagenetDataset:__init(imageInfo, opt, split)
    self.imageInfo = imageInfo[split]
+   self.classList = imageInfo['classList']
    self.opt = opt
    self.split = split
    self.dir = paths.concat(opt.data, split)
@@ -90,7 +91,7 @@ function ImagenetDataset:preprocess()
          t.ColorNormalize(meanstd),
          t.HorizontalFlip(0.5),
       }
-   elseif self.split == 'val' then
+   elseif self.split == 'val' or self.split == 'test' then
       local Crop = self.opt.tenCrop and t.TenCrop or t.CenterCrop
       return t.Compose{
          t.Scale(256),

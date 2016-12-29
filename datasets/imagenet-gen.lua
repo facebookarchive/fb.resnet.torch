@@ -85,6 +85,49 @@ local function findImages(dir, classToIdx)
    return imagePath, imageClass
 end
 
+
+local function findTestImages(dir)
+   local imagePath = torch.CharTensor()
+
+   ----------------------------------------------------------------------
+   -- Options for the GNU and BSD find command
+   local extensionList = {'jpg', 'png','JPG','PNG','JPEG', 'ppm', 'PPM', 'bmp', 'BMP'}
+   local findOptions = ' -iname "*.' .. extensionList[1] .. '"'
+   for i=2,#extensionList do
+      findOptions = findOptions .. ' -o -iname "*.' .. extensionList[i] .. '"'
+   end
+
+   -- Find all the images using the find command
+   local f = io.popen('find -L ' .. dir .. findOptions)
+
+   local maxLength = -1
+   local imagePaths = {}
+
+   -- Generate a list of all the images and their class
+   while true do
+      local line = f:read('*line')
+      if not line then break end
+
+      local path = paths.basename(line)
+
+      table.insert(imagePaths, path)
+
+      maxLength = math.max(maxLength, #path + 1)
+   end
+
+   f:close()
+
+   -- Convert the generated list to a tensor for faster loading
+   local nImages = #imagePaths
+   local imagePath = torch.CharTensor(nImages, maxLength):zero()
+   for i, path in ipairs(imagePaths) do
+      ffi.copy(imagePath[i]:data(), path)
+   end
+
+   local imageClass = torch.LongTensor(nImages):zero() - 1
+   return imagePath, imageClass
+end
+
 function M.exec(opt, cacheFile)
    -- find the image path names
    local imagePath = torch.CharTensor()  -- path to each image in dataset
@@ -92,6 +135,7 @@ function M.exec(opt, cacheFile)
 
    local trainDir = paths.concat(opt.data, 'train')
    local valDir = paths.concat(opt.data, 'val')
+   local testDir = paths.concat(opt.data, 'test')
    assert(paths.dirp(trainDir), 'train directory not found: ' .. trainDir)
    assert(paths.dirp(valDir), 'val directory not found: ' .. valDir)
 
@@ -104,6 +148,9 @@ function M.exec(opt, cacheFile)
    print(" | finding all training images")
    local trainImagePath, trainImageClass = findImages(trainDir, classToIdx)
 
+   print(" | finding all test images")
+   local testImagePath, testImageClass = findTestImages(testDir)
+
    local info = {
       basedir = opt.data,
       classList = classList,
@@ -114,6 +161,10 @@ function M.exec(opt, cacheFile)
       val = {
          imagePath = valImagePath,
          imageClass = valImageClass,
+      },
+      test = {
+         imagePath = testImagePath,
+         imageClass = testImageClass,
       },
    }
 
