@@ -150,13 +150,23 @@ function Trainer:computeScore(output, target, nCrops)
    return top1 * 100, top5 * 100
 end
 
+local function getCudaTensorType(tensorType)
+  if tensorType == 'torch.CudaHalfTensor' then
+     return cutorch.createCudaHalfHostTensor()
+  elseif tensorType == 'torch.CudaDoubleTensor' then
+    return cutorch.createCudaDoubleHostTensor()
+  else
+     return cutorch.createCudaHostTensor()
+  end
+end
+
 function Trainer:copyInputs(sample)
    -- Copies the input to a CUDA tensor, if using 1 GPU, or to pinned memory,
    -- if using DataParallelTable. The target is always copied to a CUDA tensor
    self.input = self.input or (self.opt.nGPU == 1
-      and torch.CudaTensor()
-      or cutorch.createCudaHostTensor())
-   self.target = self.target or (torch.CudaLongTensor and torch.CudaLongTensor()or torch.CudaTensor())
+      and torch[self.opt.tensorType:match('torch.(%a+)')]()
+      or getCudaTensorType(self.opt.tensorType))
+   self.target = self.target or (torch.CudaLongTensor and torch.CudaLongTensor())
    self.input:resize(sample.input:size()):copy(sample.input)
    self.target:resize(sample.target:size()):copy(sample.target)
 end
