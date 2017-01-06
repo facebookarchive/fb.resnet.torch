@@ -23,6 +23,7 @@ function M.parse(arg)
    cmd:option('-backend',    'cudnn',    'Options: cudnn | cunn')
    cmd:option('-cudnn',      'fastest',  'Options: fastest | default | deterministic')
    cmd:option('-gen',        'gen',      'Path to save generated files')
+   cmd:option('-precision', 'single',    'Options: single | double | half')
    ------------- Data options ------------------------
    cmd:option('-nThreads',        2, 'number of data loading threads')
    ------------- Training options --------------------
@@ -86,12 +87,21 @@ function M.parse(arg)
       cmd:error('unknown dataset: ' .. opt.dataset)
    end
 
+   if opt.precision == nil or opt.precision == 'single' then
+      opt.tensorType = 'torch.CudaTensor'
+   elseif opt.precision == 'double' then
+      opt.tensorType = 'torch.CudaDoubleTensor'
+   elseif opt.precision == 'half' then
+      opt.tensorType = 'torch.CudaHalfTensor'
+   else
+      cmd:error('unknown precision: ' .. opt.precision)
+   end
+
    if opt.resetClassifier then
       if opt.nClasses == 0 then
          cmd:error('-nClasses required when resetClassifier is set')
       end
    end
-
    if opt.shareGradInput and opt.optnet then
       cmd:error('error: cannot use both -shareGradInput and -optnet')
    end
