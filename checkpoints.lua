@@ -14,6 +14,8 @@ local function deepCopy(tbl)
    for k, v in pairs(tbl) do
       if type(v) == 'table' then
          copy[k] = deepCopy(v)
+      elseif torch.type(v):find('Tensor') then
+        copy[k] = v:float()
       else
          copy[k] = v
       end
