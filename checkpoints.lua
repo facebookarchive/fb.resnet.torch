@@ -8,12 +8,24 @@
 --
 local checkpoint = {}
 
+local function deepDelete(tbl)
+   for k, v in pairs(tbl) do
+      if type(v) == 'table' then
+         deepDelete(v)
+      else
+         v = nil
+      end
+   end
+end
+
 local function deepCopy(tbl)
    -- creates a copy of a network with new modules and the same tensors
    local copy = {}
    for k, v in pairs(tbl) do
       if type(v) == 'table' then
          copy[k] = deepCopy(v)
+      elseif torch.type(v):find('Tensor') then
+        copy[k] = v:float()
       else
          copy[k] = v
       end
@@ -64,6 +76,9 @@ function checkpoint.save(epoch, model, optimState, isBestModel, opt)
    if isBestModel then
       torch.save(paths.concat(opt.save, 'model_best.t7'), model)
    end
+   deepDelete(model)
+   model = nil
+   collectgarbage()
 end
 
 return checkpoint
