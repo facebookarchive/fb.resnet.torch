@@ -115,16 +115,16 @@ function M.shareGradInput(model, opt)
       if torch.isTensor(m.gradInput) and moduleType ~= 'nn.ConcatTable' then
          local key = sharingKey(m)
          if cache[key] == nil then
-            cache[key] = torch[self.opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')]()(1)
+            cache[key] = torch[opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')](1)
          end
          m.gradInput = torch[opt.tensorType:match('torch.(%a+)')](cache[key], 1, 0)
       end
    end)
    for i, m in ipairs(model:findModules('nn.ConcatTable')) do
       if cache[i % 2] == nil then
-         cache[i % 2] = torch.CudaStorage(1)
+         cache[i % 2] = torch[opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')](1)
       end
-      m.gradInput = torch[self.opt.tensorType:match('torch.(%a+)'):gsub('Tensor','Storage')](cache[i % 2], 1, 0)
+      m.gradInput = torch[opt.tensorType:match('torch.(%a+)')](cache[i % 2], 1, 0)
    end
 end
 
