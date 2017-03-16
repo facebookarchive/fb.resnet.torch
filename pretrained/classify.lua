@@ -55,6 +55,9 @@ local transform = t.Compose{
 
 local N = 5
 
+-- Create a timer for benchmark purposes.
+local timer = torch.Timer()
+
 for i=2,#arg do
    -- load the image as a RGB float tensor with values 0..1
    local img = image.load(arg[i], 3, 'float')
@@ -66,8 +69,10 @@ for i=2,#arg do
    -- View as mini-batch of size 1
    local batch = img:view(1, table.unpack(img:size():totable()))
 
-   -- Get the output of the softmax
+   -- Get the output of the softmax and computational time
+   timer:reset()
    local output = model:forward(batch:cuda()):squeeze()
+   local computeTime = timer:time().real
 
    -- Get the top 5 class indexes and probabilities
    local probs, indexes = output:topk(N, true, true)
@@ -75,6 +80,7 @@ for i=2,#arg do
    for n=1,N do
      print(probs[n], imagenetLabel[indexes[n]])
    end
+   print('Image compute time: ' .. computeTime*1000 .. ' ms')
    print('')
 
 end
