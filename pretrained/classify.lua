@@ -55,7 +55,7 @@ local transform = t.Compose{
 
 local N = 5
 
--- Create a timer for benchmark purposes.
+-- Create a timer for benchmarking purposes.
 local timer = torch.Timer()
 
 for i=2,#arg do
@@ -72,7 +72,7 @@ for i=2,#arg do
    -- Get the output of the softmax and computational time
    timer:reset()
    local output = model:forward(batch:cuda()):squeeze()
-   local computeTime = timer:time().real
+   local computeTime = timer:time().user + timer:time().sys
 
    -- Get the top 5 class indexes and probabilities
    local probs, indexes = output:topk(N, true, true)
@@ -84,3 +84,4 @@ for i=2,#arg do
    print('')
 
 end
+
