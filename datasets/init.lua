@@ -22,7 +22,7 @@ end
 function M.create(opt, split)
    local cachePath = paths.concat(opt.gen, opt.dataset .. '.t7')
    if not paths.filep(cachePath) or not isvalid(opt, cachePath) then
-      paths.mkdir('gen')
+      paths.mkdir(opt.gen)
 
       local script = paths.dofile(opt.dataset .. '-gen.lua')
       script.exec(opt, cachePath)
