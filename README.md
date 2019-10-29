@@ -1,3 +1,7 @@
+Archived
+========
+This project is no longer maintained. Consider using [ImageNet training in PyTorch](https://github.com/pytorch/examples/tree/master/imagenet) instead.
+
 ResNet training in Torch
 ============================
 
