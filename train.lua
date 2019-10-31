@@ -102,7 +102,6 @@ function Trainer:test(epoch, dataloader)
 
       local output = self.model:forward(self.input):float()
       local batchSize = output:size(1) / nCrops
-      local loss = self.criterion:forward(self.model.output, self.target)
 
       local top1, top5 = self:computeScore(output, sample.target, nCrops)
       top1Sum = top1Sum + top1*batchSize
