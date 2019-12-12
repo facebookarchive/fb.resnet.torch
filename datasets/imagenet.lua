@@ -46,10 +46,18 @@ function ImagenetDataset:_loadImage(path)
    -- image format. In that case, use image.decompress on a ByteTensor.
    if not ok then
       local f = io.open(path, 'r')
-      assert(f, 'Error reading: ' .. tostring(path))
+      if not f then
+         print('unable to read file: ' .. tostring(path))
+         -- In this bad case, just fill a mean image.
+         return torch.FloatTensor(3, 256, 256):fill(.5)
+      end
       local data = f:read('*a')
       f:close()
-
+      if data == nil then
+         print('unable to read file: ' .. tostring(path))
+         -- In this bad case, just fill a mean image.
+         return torch.FloatTensor(3, 256, 256):fill(.5)
+      end
       local b = torch.ByteTensor(string.len(data))
       ffi.copy(b:data(), data, b:size(1))
 
